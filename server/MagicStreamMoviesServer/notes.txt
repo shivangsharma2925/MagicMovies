@@ -1,0 +1,2 @@
+1) package in go is the way to group the multiple files under same package which can share the functions, structs, variables, etc. Only declarations starting with capital letter can be used by anywhere outside the package.
+
