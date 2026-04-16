@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -36,6 +37,9 @@ func NewMovieController(db *database.MongoDB, dbLogger *dblogger.DBLogger) *Movi
 		dbLogger: dbLogger,
 	}
 }
+
+var geminiClient *genai.Client
+var clientOnce sync.Once
 
 // High-performance JSON but gin already optimizes the json, so unnecessary (used just for learning)
 var json = jsoniter.ConfigFastest
@@ -410,7 +414,6 @@ func (mc *MovieController) GetReviewRanking(review string, c *gin.Context) (stri
 	if err != nil {
 		return "", 0, err
 	}
-	defer client.Close()
 
 	model := client.GenerativeModel("gemini-2.5-flash") //gemini-3-flash-preview
 
@@ -532,4 +535,20 @@ func (mc *MovieController) GetGenres(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, genreNames)
+}
+
+func GetGeminiClient(ctx context.Context) (*genai.Client, error) {
+	var err error
+
+	clientOnce.Do(func() {
+		apiKey := os.Getenv("GEMINI_API_KEY")
+		if apiKey == "" {
+			err = errors.New("missing GEMINI_API_KEY")
+			return
+		}
+
+		geminiClient, err = genai.NewClient(ctx, option.WithAPIKey(apiKey))
+	})
+
+	return geminiClient, err
 }
