@@ -37,12 +37,6 @@ func main() {
 	// Custom middleware
 	router.Use(gin.Recovery())
 
-	// router.GET("/health", func(c *gin.Context) {
-	// 	c.JSON(http.StatusOK, gin.H{
-	// 		"status": "running",
-	// 	})
-	// })
-
 	// Load env
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -104,6 +98,12 @@ func main() {
 
 	// establish routes for requests
 	routes.SetupRoutes(router, db, dbLogger)
+
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "running",
+		})
+	})
 
 	// router.Run() method kills the server whenever fatal occurs thus leading to faulty or dirty data since requests abrubtly terminates
 	// err := router.Run(":8080")
