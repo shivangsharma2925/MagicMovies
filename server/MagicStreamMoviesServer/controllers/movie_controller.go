@@ -57,11 +57,24 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
+	search := c.Query("search")
+
+	filter := bson.M{}
+
+	if search != "" {
+        filter = bson.M{
+            "title": bson.M{
+                "$regex":   search, // slow for large data sets, instead create index on "text" for title
+                "$options": "i", // for case-insensitive
+            },
+        }
+    }
+
 	var movies []models.Movie
 
 	movieCollection := mc.db.Collection("movies")
 
-	cursor, err := movieCollection.Find(ctx, bson.M{})
+	cursor, err := movieCollection.Find(ctx, filter)
 
 	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "Failed to fetch movies", gin.H{
@@ -409,7 +422,9 @@ func (mc *MovieController) GetReviewRanking(review string, c *gin.Context) (stri
 	}
 
 	//Make this connection only once in main.go and pass it here to reduce time
-	client, err := genai.NewClient(ctx, option.WithAPIKey(GEMINI_API_KEY))
+	// client, err := genai.NewClient(ctx, option.WithAPIKey(GEMINI_API_KEY))
+
+	client, err := GetGeminiClient(ctx)
 
 	if err != nil {
 		return "", 0, err
@@ -447,7 +462,7 @@ func (mc *MovieController) GetReviewRanking(review string, c *gin.Context) (stri
 		}
 	}
 
-	// fallback (important)
+	// fallback (important
 	if rankVal == 0 {
 		response = "Okay"
 		for _, r := range rankings {

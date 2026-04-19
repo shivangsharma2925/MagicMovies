@@ -47,7 +47,7 @@ const useAxiosPrivate = () => {
           isRefreshing.current = true;
 
           try {
-            await axiosAuth.post("/refresh");
+            await axiosAuth.get("/refresh");
             processQueue(null);
             return axiosAuth(originalRequest);
           } catch (err) {
