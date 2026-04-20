@@ -6,9 +6,9 @@ import { useNavigate, NavLink, Link } from "react-router-dom";
 import UseAuth from "../../hook/UseAuth";
 import logo from "../../assets/MagicStreamLogo.png";
 
-const Header = ({ handleLogout }) => {
+const Header = () => {
   const navigate = useNavigate();
-  const { auth } = UseAuth();
+  const { auth, logout } = UseAuth();
 
   return (
     <Navbar
@@ -50,7 +50,7 @@ const Header = ({ handleLogout }) => {
                 <Button
                   variant="outline-light"
                   size="sm"
-                  onClick={() => handleLogout()}
+                  onClick={() => logout()}
                 >
                   Logout
                 </Button>

@@ -34,7 +34,7 @@ const Login = () => {
                 return;
             }
             setAuth(res.data);
-            localStorage.setItem('user', JSON.stringify(res.data));
+            // localStorage.setItem('user', JSON.stringify(res.data));
             naviagte(from, {replace: true});
         } catch (error) {
             console.log(error);

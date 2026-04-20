@@ -4,7 +4,7 @@ import Movies from "../movies/Movies";
 import { Form } from "react-bootstrap";
 import Spinner from "../../utils/Spinner";
 
-const Home = ({updateMovieReview})=>{
+const Home = ()=>{
     const [movies, setMovies] = useState([])
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState()
@@ -60,7 +60,7 @@ const Home = ({updateMovieReview})=>{
             </Form>
             {loading ? 
                 (<h2><Spinner /></h2>)
-            : (<Movies movies={movies} message={message} updateMovieReview={updateMovieReview} />)
+            : (<Movies movies={movies} message={message} />)
             }
         </>
     );

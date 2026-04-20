@@ -6,13 +6,11 @@ import "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { AuthProvider } from "./context/AuthProvider.jsx";
 import { BrowserRouter } from "react-router-dom";
-import AuthSync from "./context/AuthSync.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
       <AuthProvider>
         <BrowserRouter>
-          <AuthSync />
           <App />
         </BrowserRouter>
       </AuthProvider>

@@ -40,6 +40,7 @@ func SetupRoutes(
 	protected.Use(authMiddleware)
 	protected.Use(userLimiter.UserMiddleware())
 	{
+		protected.GET("/profile/me", userController.GetProfile)
 		protected.GET("/movie/:imdb_id", movieController.GetMovie)
 		protected.POST("/addmovie", movieController.AddMovie)
 		protected.GET("/recommendedmovies", movieController.GetRecommendedMovies)

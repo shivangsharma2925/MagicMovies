@@ -289,6 +289,43 @@ func (uc *UserController) RefreshTokenHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Tokens refreshed"})
 }
 
+func (uc *UserController) GetProfile(c *gin.Context){
+	userId, err := utilities.GetUserIdfromContext(c)
+
+	ctx, cancel := context.WithTimeout(c, 5*time.Second)
+	defer cancel()
+
+	if err != nil{
+		uc.dbLogger.Alerts("ERROR", "Token update failed", gin.H{
+			"endpoint": "/GetProfile",
+			"userId": userId,
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+
+	usercollection := uc.db.Collection("users")
+
+	var user models.User
+
+	err = usercollection.FindOne(ctx, bson.M{"user_id": userId}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		return
+	}
+	
+	c.JSON(http.StatusOK, models.UserResponse{
+		Email:           user.Email,
+		UserId:          user.UserID,
+		FirstName:       user.FirstName,
+		LastName:        user.LastName,
+		Role:            user.Role,
+		FavouriteGenres: user.FavouriteGenres,
+	})
+	
+}
+
 func (uc *UserController) UpdateAllTokens(userid, refreshtoken string, c *gin.Context) error {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()

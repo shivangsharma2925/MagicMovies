@@ -1,4 +1,4 @@
-import { Route, Routes, useNavigate } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import "./App.css";
 import Header from "./components/header/Header";
 import Home from "./components/home/Home";
@@ -8,39 +8,22 @@ import Layout from "./components/Layout";
 import RequiredAuth from "./components/RequiredAuth";
 import Recommended from "./components/recommended/Recommended";
 import Review from "./components/review/AdminReview";
-import axiosConfig from "./api/axiosConfig";
 import UseAuth from "./hook/UseAuth";
 import StreamMovie from "./components/stream/StreamMovie";
+import Spinner from "./utils/Spinner";
 
 function App() {
-
-  const navigate = useNavigate();
-  const {auth, setAuth} = UseAuth();
-
-  const updateMovieReview = (imdb_id) => {
-      navigate(`/review/${imdb_id}`);
-  };
-
-  const handleLogout = async () => {
-      try {
-          await axiosConfig.post("/logout",{user_id: auth.user_id});
-          setAuth(null);
-          localStorage.removeItem('user');
-          // console.log('User logged out');
-
-      } catch (error) {
-          console.error('Error logging out:', error);
-      } 
-  };
-
+  const { loading } = UseAuth();
+  
+  if (loading) return <div><Spinner /></div>;
   return (
     <>
-      <Header handleLogout = {handleLogout}/>
+      <Header />
       <Routes>
         {/* Layout wrapper */}
         <Route path="/" element={<Layout />}>
           {/* Public routes */}
-          <Route index element={<Home updateMovieReview={updateMovieReview}/>} />
+          <Route index element={<Home />} />
           <Route path="register" element={<Register />} />
           <Route path="login" element={<Login />} />
 
