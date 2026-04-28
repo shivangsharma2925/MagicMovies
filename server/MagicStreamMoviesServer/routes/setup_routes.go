@@ -17,7 +17,7 @@ func SetupRoutes(
 	// Initialize controllers with dependencies
 	movieController := controllers.NewMovieController(db, dbLogger)
 	userController := controllers.NewUserController(db, dbLogger)
-	
+
 	// Initialize middleware with dependencies
 	authMiddleware := middleware.AuthMiddleware(dbLogger)
 	ipLimiter := middleware.NewRateLimiter(2, 5)    // public APIs, rate = 2 tokens/sec, burst = 5 req at a same time
@@ -31,7 +31,7 @@ func SetupRoutes(
 	api.POST("/login", ipLimiter.IPMiddleware(), userController.LoginUser)
 	api.POST("/logout", ipLimiter.IPMiddleware(), userController.LogoutHandler)
 	api.GET("/refresh", ipLimiter.IPMiddleware(), userController.RefreshTokenHandler)
-	
+
 	api.GET("/movies", ipLimiter.IPMiddleware(), movieController.GetMovies)
 	api.GET("/genres", ipLimiter.IPMiddleware(), movieController.GetGenres)
 

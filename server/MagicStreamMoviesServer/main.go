@@ -17,9 +17,14 @@ import (
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/routes"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/services"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/workers"
 )
 
 func main() {
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Load config (env)
 	port := getEnv("PORT", "8080")
@@ -51,9 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-
-	db, err := database.NewMongoDB(ctx, mongoURI, dbName, logger)
+	db, err := database.NewMongoDB(context.Background(), mongoURI, dbName, logger)
 	if err != nil {
 		logger.Error("DB init failed", "error", err)
 		os.Exit(1)
@@ -65,6 +68,12 @@ func main() {
 
 	var dbLogger *dblogger.DBLogger
 	dbLogger = dblogger.NewDBLogger(db, logger)
+
+	// Initialize services with dependencies
+	movieServices := services.NewMovieService(db, dbLogger)
+
+	//Initialize 3 parallel worker
+	workers.StartWorkers(ctx, movieServices, 3)
 
 	//CORS policy
 	// router.Use(cors.New(cors.Config{
@@ -129,11 +138,14 @@ func main() {
 
 	logger.Info("Shutting down server...")
 
-	// 5 seconds are given for all the pending requests to complete after that server will terminate them forcefully
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	// stop workers
+	cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
+	// 5 seconds are given for all the pending requests to complete after that server will terminate them forcefully
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
 		logger.Error("Forced to shutdown", "error", err)
 	}
 

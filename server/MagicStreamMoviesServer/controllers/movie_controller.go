@@ -18,6 +18,7 @@ import (
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/models"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/queue"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/utilities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -62,13 +63,13 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 	filter := bson.M{}
 
 	if search != "" {
-        filter = bson.M{
-            "title": bson.M{
-                "$regex":   search, // slow for large data sets, instead create index on "text" for title
-                "$options": "i", // for case-insensitive
-            },
-        }
-    }
+		filter = bson.M{
+			"title": bson.M{
+				"$regex":   search, // slow for large data sets, instead create index on "text" for title
+				"$options": "i",    // for case-insensitive
+			},
+		}
+	}
 
 	var movies []models.Movie
 
@@ -145,31 +146,78 @@ func (mc *MovieController) GetMovie(c *gin.Context) {
 }
 
 func (mc *MovieController) AddMovie(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c, 10*time.Second)
-	defer cancel()
 
-	var movie models.Movie
-
-	if err := c.ShouldBindJSON(&movie); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Input"})
+	role, err := utilities.GetRolefromContect(c)
+	if err != nil{
+		mc.dbLogger.Alerts("ERROR", "Error in getting role", gin.H{
+			"endpoint": "/AddMovie",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal error"})
 		return
 	}
 
-	//validate is an instance of a validator which is used to validate the incoming struct against all the validations we have defined in the models
-	if err := validate.Struct(movie); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Validation failed", "details": err.Error()})
+	if role != "ADMIN" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User must be Admin to access this functionality"})
 		return
 	}
 
-	movieCollection := mc.db.Collection("movies")
+	var req struct {
+		ImdbIDs string `json:"imdb_ids"`
+	}
 
-	result, err := movieCollection.InsertOne(ctx, movie)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Couldn't add the Movie, try again!"})
+	if err := c.BindJSON(&req); err != nil {
+		mc.dbLogger.Alerts("ERROR", "Bind error", gin.H{
+			"endpoint": "/AddMovie",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	c.JSON(http.StatusCreated, result)
+	if req.ImdbIDs == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "imdb_ids required"})
+		return
+	}
+
+	// Split input
+	ids := strings.Split(req.ImdbIDs, ",")
+
+	if len(ids) > 5 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Too many IDs"})
+		return
+	}
+
+	added := []string{}
+	skipped := []string{}
+
+	for _, id := range ids {
+		imdbID := strings.ToLower(strings.TrimSpace(id))
+
+		if imdbID == "" {
+			continue
+		}
+
+		// Basic validation
+		if !utilities.IsValidImdbID(imdbID) {
+			skipped = append(skipped, imdbID)
+			continue
+		}
+
+		// Optional: prevent duplicate queueing
+		// if queue.Exists(imdbID) {
+		// 	skipped = append(skipped, imdbID)
+		// 	continue
+		// }
+
+		queue.PushToQueue(imdbID)
+		added = append(added, imdbID)
+	}
+
+	c.JSON(200, gin.H{
+		"added":   added,
+		"skipped": skipped,
+	})
 }
 
 func (mc *MovieController) AdminReviewUpdate(c *gin.Context) {

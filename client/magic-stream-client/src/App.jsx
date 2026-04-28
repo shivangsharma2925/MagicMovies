@@ -11,6 +11,7 @@ import Review from "./components/review/AdminReview";
 import UseAuth from "./hook/UseAuth";
 import StreamMovie from "./components/stream/StreamMovie";
 import Spinner from "./utils/Spinner";
+import AddMovie from "./components/addMovies/AddMovie";
 
 function App() {
   const { loading } = UseAuth();
@@ -32,6 +33,7 @@ function App() {
             <Route path="recommended" element={<Recommended />} />
             <Route path="review/:imdb_id" element={<Review />} />
             <Route path="stream/:yt_id" element={<StreamMovie />} />
+            <Route path="admin/add-movie" element={<AddMovie />} />
           </Route>
         </Route>
       </Routes>

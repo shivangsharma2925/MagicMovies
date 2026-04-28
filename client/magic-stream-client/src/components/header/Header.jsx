@@ -17,6 +17,7 @@ const Header = () => {
       expand="lg"
       sticky="top"
       className="shadow-sm"
+      style={{ zIndex: 1021 }}
     >
       <Container>
         <Navbar.Brand>

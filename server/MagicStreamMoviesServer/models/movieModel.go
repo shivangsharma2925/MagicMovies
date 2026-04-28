@@ -22,3 +22,36 @@ type Ranking struct {
 	RankingValue int    `bson:"ranking_value" json:"ranking_value" validate:"required"`
 	RankingName  string `bson:"ranking_name" json:"ranking_name" validate:"required"` //oneof=Excellent Good Okay Bad Terible
 }
+
+type TMDBFindResponse struct {
+	MovieResults []struct {
+		ID int `json:"id"`
+	} `json:"movie_results"`
+}
+
+type TMDBMovieDetails struct {
+	Title      string `json:"title"`
+	PosterPath string `json:"poster_path"`
+	Rating     float64    `json:"vote_average"`
+	Genres     []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"genres"`
+}
+
+type TMDBVideoResponse struct {
+	Results []struct {
+		Key  string `json:"key"`
+		Site string `json:"site"`
+		Type string `json:"type"`
+	} `json:"results"`
+}
+
+type MovieData struct {
+	ImdbID    string
+	Title     string
+	Poster    string
+	Genres    []Genre
+	YoutubeID string
+	Ranking   Ranking
+}

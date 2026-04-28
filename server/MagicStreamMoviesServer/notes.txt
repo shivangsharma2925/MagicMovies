@@ -1,2 +1,3 @@
 1) package in go is the way to group the multiple files under same package which can share the functions, structs, variables, etc. Only declarations starting with capital letter can be used by anywhere outside the package.
 
+2) select keyword is used in context of channels, it purpose is to maintain concurrency between multiple channels, it watches all the channels and which ever is ready first (to send or recieve data), it executes that first. If none channels are ready then it will block the go routine thus consuming 0 CPU usage or resources, you can make the channel to don't wait by adding the default scenario.

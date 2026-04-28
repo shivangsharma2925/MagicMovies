@@ -1,7 +1,7 @@
 import Movie from "../movie/Movie";
 
 const Movies = ({ movies, message }) => {
-  if (!movies.length) {
+  if (movies == null || !movies.length) {
     return <h2 className="text-center mt-4">{message}</h2>;
   }
 
