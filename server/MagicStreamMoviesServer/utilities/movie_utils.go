@@ -22,7 +22,8 @@ func WithRetry(attempts int, ctx context.Context, fn func() error) error {
 	var err error
 
 	for i := 0; i < attempts; i++ {
-
+		
+		// added this so that retry won't delay the shutdown too long
 		select {
 		case <-ctx.Done():
 			return ctx.Err()

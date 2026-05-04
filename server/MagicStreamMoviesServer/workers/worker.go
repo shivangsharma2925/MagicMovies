@@ -2,7 +2,6 @@ package workers
 
 import (
 	"context"
-	"errors"
 	"log"
 	"time"
 
@@ -64,14 +63,6 @@ func worker(ctx context.Context, movieServices *services.MovieService, jobServic
 }
 
 func processMovie(ctx context.Context, movieServices *services.MovieService, imdbID string) error {
-
-	// added this so that retry won't delay the shutdown too long
-	select {
-	case <-ctx.Done():
-		log.Printf("Cancelled Processing for %s", imdbID)
-		return errors.New("Cancelled request")
-	default:
-	}
 
 	err := movieServices.ProcessMovie(imdbID, ctx)
 	if err == nil {

@@ -60,22 +60,47 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 
 	search := c.Query("search")
 
+	// if page or limit is not send in the URL, it will take the default value of 1 and 10 respectively.
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
+		page = 1
+	}
+
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil || limit < 1 {
+		limit = 10
+	}
+
+	skip := (page - 1) * limit
+
 	filter := bson.M{}
 
 	if search != "" {
-		filter = bson.M{
-			"title": bson.M{
-				"$regex":   search, // slow for large data sets, instead create index on "text" for title
-				"$options": "i",    // for case-insensitive
-			},
+		if len(search) < 3 {
+			filter = bson.M{
+				"title": bson.M{
+					"$regex":   "^" + search, // ^ = starts with, all words that starts with search string are matched
+					"$options": "i", // case-insensitive
+				},
+			}
+		} else {
+			filter = bson.M{
+				"$text": bson.M{
+					"$search": search,
+				},
+			}
 		}
 	}
 
-	var movies []models.Movie
+	findOptions := options.Find().
+		SetSkip(int64(skip)).
+		SetLimit(int64(limit))
+
+	movies := []models.Movie{}
 
 	movieCollection := mc.db.Collection("movies")
 
-	cursor, err := movieCollection.Find(ctx, filter)
+	cursor, err := movieCollection.Find(ctx, filter, findOptions)
 
 	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "Failed to fetch movies", gin.H{
@@ -114,8 +139,15 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 
 	// c.JSON(http.StatusOK, movies)
 
+	c.JSON(http.StatusOK, gin.H{
+		"page":   page,
+		"limit":  limit,
+		"movies": movies,
+		"hasMore": len(movies) == limit,
+	})
+
 	//mustMarshal is not efficient and unsafe as it silently ignores error
-	c.Data(http.StatusOK, "application/json", mustMarshal(movies))
+	// c.Data(http.StatusOK, "application/json", mustMarshal(movies))
 }
 
 func (mc *MovieController) GetMovie(c *gin.Context) {

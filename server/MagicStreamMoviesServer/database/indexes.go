@@ -35,6 +35,12 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 			SetName("movies_unique_imdbID"),
 	}
 
+	moviesTextIndex := mongo.IndexModel{
+		Keys: bson.M{"title": "text"},
+		Options: options.Index().
+			SetName("movies_text_title"),
+	}
+
 	jobsIndex := mongo.IndexModel{
 		Keys: bson.M{"imdb_id": 1},
 		Options: options.Index().
@@ -44,7 +50,7 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 
 	_, err := AlertsCollection.Indexes().CreateOne(ctx, alertsIndex)
 	_, err = logsLollection.Indexes().CreateOne(ctx, logsIndex)
-	_, err = moviesCollection.Indexes().CreateOne(ctx, moviesIndex)
+	_, err = moviesCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{moviesIndex, moviesTextIndex,})
 	_, err = jobsCollection.Indexes().CreateOne(ctx, jobsIndex)
 
 	return err
