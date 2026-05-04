@@ -1,6 +1,10 @@
 package models
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type Movie struct {
 	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
@@ -30,9 +34,9 @@ type TMDBFindResponse struct {
 }
 
 type TMDBMovieDetails struct {
-	Title      string `json:"title"`
-	PosterPath string `json:"poster_path"`
-	Rating     float64    `json:"vote_average"`
+	Title      string  `json:"title"`
+	PosterPath string  `json:"poster_path"`
+	Rating     float64 `json:"vote_average"`
 	Genres     []struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
@@ -54,4 +58,23 @@ type MovieData struct {
 	Genres    []Genre
 	YoutubeID string
 	Ranking   Ranking
+}
+
+type JobStatus string
+
+const (
+	StatusPending    JobStatus = "pending"
+	StatusProcessing JobStatus = "processing"
+	StatusDone       JobStatus = "done"
+	StatusFailed     JobStatus = "failed"
+)
+
+type Job struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	ImdbID    string             `bson:"imdb_id" json:"imdb_id"`
+	Status    JobStatus          `bson:"status" json:"status"`
+	Attempts  int                `bson:"attempts" json:"attempts"`
+	Error     string             `bson:"error,omitempty" json:"error,omitempty"`
+	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
+	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
 }

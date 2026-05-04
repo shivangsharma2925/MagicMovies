@@ -71,17 +71,10 @@ func main() {
 
 	// Initialize services with dependencies
 	movieServices := services.NewMovieService(db, dbLogger)
+	jobServices := services.NewJobService(db)
 
 	//Initialize 3 parallel worker
-	workers.StartWorkers(ctx, movieServices, 3)
-
-	//CORS policy
-	// router.Use(cors.New(cors.Config{
-	// 	AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
-	// 	AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
-	// 	AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-	// 	AllowCredentials: true,
-	// }))
+	workers.StartWorkers(ctx, movieServices, jobServices, 3)
 
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 
@@ -95,6 +88,7 @@ func main() {
 		origins = []string{"http://localhost:5173"}
 	}
 
+	//CORS policy
 	config := cors.Config{}
 	config.AllowOrigins = origins
 	config.AllowMethods = []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"}

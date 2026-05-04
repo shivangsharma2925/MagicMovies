@@ -188,6 +188,8 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 		return
 	}
 
+	jobCollection := mc.db.Collection("jobs")
+
 	added := []string{}
 	skipped := []string{}
 
@@ -210,11 +212,24 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 		// 	continue
 		// }
 
+		job := models.Job{
+			ImdbID:    imdbID,
+			Status:    models.StatusPending,
+			Attempts:  0,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		_, err := jobCollection.InsertOne(context.Background(), job)
+		if err != nil {
+			continue
+		}
+
 		queue.PushToQueue(imdbID)
 		added = append(added, imdbID)
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"added":   added,
 		"skipped": skipped,
 	})

@@ -6,6 +6,7 @@ import (
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/middleware"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/websocket"
 )
 
 func SetupRoutes(
@@ -17,11 +18,15 @@ func SetupRoutes(
 	// Initialize controllers with dependencies
 	movieController := controllers.NewMovieController(db, dbLogger)
 	userController := controllers.NewUserController(db, dbLogger)
+	jobController := controllers.NewJobController(db, dbLogger)
 
 	// Initialize middleware with dependencies
 	authMiddleware := middleware.AuthMiddleware(dbLogger)
 	ipLimiter := middleware.NewRateLimiter(2, 5)    // public APIs, rate = 2 tokens/sec, burst = 5 req at a same time
 	userLimiter := middleware.NewRateLimiter(5, 10) // private APIs, rate = 5 tokens/sec, burst = 10 req at a same time
+
+	// Special request for Websocket connection
+	router.GET("/ws", websocket.HandleConnections)
 
 	// API versioning
 	api := router.Group("/api/v1")
@@ -41,9 +46,13 @@ func SetupRoutes(
 	protected.Use(userLimiter.UserMiddleware())
 	{
 		protected.GET("/profile/me", userController.GetProfile)
+
 		protected.GET("/movie/:imdb_id", movieController.GetMovie)
 		protected.POST("/addmovie", movieController.AddMovie)
 		protected.GET("/recommendedmovies", movieController.GetRecommendedMovies)
 		protected.POST("/updatereview/:imdb_id", movieController.AdminReviewUpdate)
+
+		protected.GET("/jobs", jobController.GetJobs)
+		protected.POST("/jobs/retry/:imdb_id", jobController.RetryJob)
 	}
 }

@@ -12,6 +12,7 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 	logsLollection := db.Collection("logs")
 	AlertsCollection := db.Collection("alerts")
 	moviesCollection := db.Collection("movies")
+	jobsCollection := db.Collection("jobs")
 
 	logsIndex := mongo.IndexModel{
 		Keys: bson.M{"timestamp": 1},
@@ -34,9 +35,17 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 			SetName("movies_unique_imdbID"),
 	}
 
+	jobsIndex := mongo.IndexModel{
+		Keys: bson.M{"imdb_id": 1},
+		Options: options.Index().
+			SetUnique(true).
+			SetName("jobs_unique_imdbID"),
+	}
+
 	_, err := AlertsCollection.Indexes().CreateOne(ctx, alertsIndex)
 	_, err = logsLollection.Indexes().CreateOne(ctx, logsIndex)
 	_, err = moviesCollection.Indexes().CreateOne(ctx, moviesIndex)
+	_, err = jobsCollection.Indexes().CreateOne(ctx, jobsIndex)
 
 	return err
 }
