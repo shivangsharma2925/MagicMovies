@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import UseAuth from "../../hook/UseAuth";
 import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import UseWebSocket from "../../hook/UseWebSocket";
 
 const JobRow = React.memo(({ job, retryMutation }) => {
   return (
@@ -49,13 +50,15 @@ const AddMovie = () => {
   const [imdbId, setImdbId] = useState("");
   const [message, setMessage] = useState("");
 
-  const socket = useRef(null);
+  // const socket = useRef(null);
 
   const axiosPrivate = useAxiosPrivate();
 
   const queryClient = useQueryClient();
 
-  const { auth } = UseAuth();
+  const { auth } = UseAuth(); //here provider has {{ auth }}
+
+  const socket = UseWebSocket(); //here provider has { socket }
 
   /*
     =========================================
@@ -141,44 +144,38 @@ const AddMovie = () => {
   */
 
   useEffect(() => {
-    socket.current = new WebSocket(
-      import.meta.env.VITE_WS_URL || "ws://localhost:8080/api/v1/ws",
-    );
 
-    socket.current.onopen = () => {
-      console.log("WebSocket Connected");
-    };
+    const Socket = socket.current;
 
-    socket.current.onmessage = (event) => {
+    const handler = (event) => {
+
       const updatedJob = JSON.parse(event.data);
 
-      /*
-        Update React Query cache directly
-      */
-      queryClient.setQueryData(["jobs"], (oldJobs = []) => {
-        return oldJobs.map((job) =>
-          job.imdb_id === updatedJob.imdb_id
-            ? { ...job, ...updatedJob }
-            : job,
-        );
-      });
-    };
+      if (updatedJob.type === "job_update") {
 
-    socket.current.onerror = (err) => {
-      console.log("WebSocket Error:", err);
-    };
+        // Update React Query cache directly
+        queryClient.setQueryData(["jobs"], (oldJobs = []) => {
+          return oldJobs.map((job) =>
+            job.imdb_id === updatedJob.imdb_id
+              ? { ...job, ...updatedJob }
+              : job,
+          );
+        });
 
-    socket.current.onclose = () => {
-      console.log("WebSocket Closed");
-    };
-
-    return () => {
-      if (socket.current) {
-        socket.current.close(1000, "Normal close");
-        socket.current = null;
       }
     };
-  }, [queryClient]);
+
+    Socket.addEventListener(
+      "message", handler
+    );
+
+    return () => {
+      Socket.removeEventListener(
+        "message", handler
+      );
+    };
+
+  }, [queryClient, socket]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -190,7 +187,7 @@ const AddMovie = () => {
       return;
     }
 
-    // if(length(imdbId.split(',')) > 5){
+    // if(imdbId.split(',').length > 5){
     //   setMessage("Please enter 5 ids at max")
     //   return;
     // }

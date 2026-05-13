@@ -1,4 +1,10 @@
-import { createContext, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import api from "../api/axiosConfig";
 
 const AuthContext = createContext({});
@@ -25,17 +31,17 @@ export const AuthProvider = ({ children }) => {
     };
 
     fetchUser();
-}, []);
+  }, []);
 
-const logout = useCallback(async () => {
-  try {
-    await api.post("/logout", { user_id: auth?.user_id });
-  } catch (err) {
-    console.error("Logout error:", err);
-  } finally {
-    setAuth(null);
-  }
-}, [auth]);
+  const logout = useCallback(async () => {
+    try {
+      await api.post("/logout", { user_id: auth?.user_id });
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      setAuth(null);
+    }
+  }, [auth]);
 
   const value = useMemo(() => {
     return { auth, setAuth, logout, loading };

@@ -35,6 +35,7 @@ func worker(ctx context.Context, movieServices *services.MovieService, jobServic
 			jobServices.IncrementAttempts(imdbID)
 			jobServices.UpdateStatus(imdbID, "processing", "")
 			websocket.BroadcastJobUpdate(gin.H{
+				"type":    "job_update",
 				"imdb_id": imdbID,
 				"status":  "processing",
 			})
@@ -47,6 +48,7 @@ func worker(ctx context.Context, movieServices *services.MovieService, jobServic
 				log.Printf("Worker %d failed: %s, err: %v\n", id, imdbID, err)
 				jobServices.MarkFailed(imdbID, err.Error())
 				websocket.BroadcastJobUpdate(gin.H{
+					"type":    "job_update",
 					"imdb_id": imdbID,
 					"status":  "failed",
 				})
@@ -54,8 +56,13 @@ func worker(ctx context.Context, movieServices *services.MovieService, jobServic
 				log.Printf("Worker %d success: %s\n", id, imdbID)
 				jobServices.MarkDone(imdbID)
 				websocket.BroadcastJobUpdate(gin.H{
+					"type":    "job_update",
 					"imdb_id": imdbID,
 					"status":  "done",
+				})
+
+				websocket.BroadcastJobUpdate(gin.H{
+					"type": "new_movie",
 				})
 			}
 		}

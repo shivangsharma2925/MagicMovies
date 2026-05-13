@@ -36,7 +36,7 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 	}
 
 	moviesTextIndex := mongo.IndexModel{
-		Keys: bson.M{"title": "text"},
+		Keys: bson.M{"title": "text"}, //mongo has some stop words like "the,and,or,a," etc which will be ignored
 		Options: options.Index().
 			SetName("movies_text_title"),
 	}

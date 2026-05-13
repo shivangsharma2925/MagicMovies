@@ -1,3 +1,7 @@
 1) package in go is the way to group the multiple files under same package which can share the functions, structs, variables, etc. Only declarations starting with capital letter can be used by anywhere outside the package.
 
 2) select keyword is used in context of channels, it purpose is to maintain concurrency between multiple channels, it watches all the channels and which ever is ready first (to send or recieve data), it executes that first. If none channels are ready then it will block the go routine thus consuming 0 CPU usage or resources, you can make the channel to don't wait by adding the default scenario.
+
+3) Page and Limit Pagination works with the concept of skip and limit where, skip = ((page - 1)*limit). The client keeps on sending the page and limit value and backend calculates the skip value and skips those records from database and send the limit number of records as response. After that client side keeps on incrementing the page value based on user action(scroll or next button). For better performance use react query to cache the data for avoiding calls when switching between pages.
+
+4) Cursor based pagination is also there which gives the last data id in response, in page and limit pagination we have everything fixed, if data in database changes simultaneously then we can get repeated data or missed data. Instead in cursor pagination we use give the last data till where server has sent data, then subsequenly we can get further more data after that flag and accordingly we mark the new flag, it is like the sliding window.

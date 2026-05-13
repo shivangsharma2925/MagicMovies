@@ -60,18 +60,21 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 
 	search := c.Query("search")
 
+	// Instead of page and limit pagination, using Cursor based pagination,
 	// if page or limit is not send in the URL, it will take the default value of 1 and 10 respectively.
-	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	if err != nil || page < 1 {
-		page = 1
-	}
+	// page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	// if err != nil || page < 1 {
+	// 	page = 1
+	// }
 
 	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	if err != nil || limit < 1 {
 		limit = 10
 	}
 
-	skip := (page - 1) * limit
+	cursorID := c.Query("cursor")
+
+	// skip := (page - 1) * limit
 
 	filter := bson.M{}
 
@@ -80,7 +83,7 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 			filter = bson.M{
 				"title": bson.M{
 					"$regex":   "^" + search, // ^ = starts with, all words that starts with search string are matched
-					"$options": "i", // case-insensitive
+					"$options": "i",          // case-insensitive
 				},
 			}
 		} else {
@@ -92,9 +95,25 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 		}
 	}
 
+	// cursor pagination
+	if cursorID != "" {
+
+		objectID, err := primitive.ObjectIDFromHex(cursorID)
+
+		if err == nil {
+			filter["_id"] = bson.M{
+				"$lt": objectID,
+			}
+		}
+	}
+
 	findOptions := options.Find().
-		SetSkip(int64(skip)).
-		SetLimit(int64(limit))
+		SetLimit(int64(limit)).
+		SetSort(bson.D{{Key: "_id", Value: -1}}) // sort descending wise on _id since mongo db '_id' is based on time stamp(latest entries has larger _id value)
+
+	// findOptions := options.Find().
+	// 	SetSkip(int64(skip)).
+	// 	SetLimit(int64(limit))
 
 	movies := []models.Movie{}
 
@@ -137,13 +156,18 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 		return
 	}
 
+	var nextCursor any = nil
+
+	if len(movies) > 0 {
+		nextCursor = movies[len(movies)-1].ID.Hex()
+	}
+
 	// c.JSON(http.StatusOK, movies)
 
 	c.JSON(http.StatusOK, gin.H{
-		"page":   page,
-		"limit":  limit,
-		"movies": movies,
-		"hasMore": len(movies) == limit,
+		"movies":     movies,
+		"nextCursor": nextCursor,
+		"hasMore":    len(movies) == limit,
 	})
 
 	//mustMarshal is not efficient and unsafe as it silently ignores error
@@ -180,7 +204,7 @@ func (mc *MovieController) GetMovie(c *gin.Context) {
 func (mc *MovieController) AddMovie(c *gin.Context) {
 
 	role, err := utilities.GetRolefromContect(c)
-	if err != nil{
+	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "Error in getting role", gin.H{
 			"endpoint": "/AddMovie",
 			"error":    err.Error(),
