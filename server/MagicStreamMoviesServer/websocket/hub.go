@@ -3,6 +3,8 @@ package websocket
 import (
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +18,24 @@ var mutex sync.Mutex
 // creates the parameters for the http Upgarder
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true
+
+		allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
+
+		whiteOrigins := make(map[string]bool)
+
+		var origins []string
+		if allowedOrigins != "" {
+			origins = strings.Split(allowedOrigins, ",")
+			for i := range origins {
+				whiteOrigins[strings.TrimSpace(origins[i])] = true
+			}
+		} else {
+			whiteOrigins["http://localhost:3000"] = true
+		}
+
+		origin := r.Header.Get("Origin")
+
+		return whiteOrigins[origin]
 	},
 }
 

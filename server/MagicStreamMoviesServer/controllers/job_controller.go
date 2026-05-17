@@ -36,7 +36,7 @@ func (jc *JobController) GetJobs(c *gin.Context) {
 }
 
 func (jc *JobController) RetryJob(c *gin.Context) {
-	imdbID := c.Param("id")
+	imdbID := c.Param("imdb_id")
 
 	jobCollection := jc.db.Collection("jobs")
 
@@ -45,7 +45,7 @@ func (jc *JobController) RetryJob(c *gin.Context) {
 		bson.M{"$set": bson.M{"status": "pending"}},
 	)
 
-	queue.PushToQueue(imdbID)
+	queue.EnqueueMovie(imdbID)
 
 	c.JSON(200, gin.H{"message": "Retry queued"})
 }

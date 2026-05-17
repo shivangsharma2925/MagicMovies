@@ -281,7 +281,18 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 			continue
 		}
 
-		queue.PushToQueue(imdbID)
+		// queue.PushToQueue(imdbID)
+		err = queue.EnqueueMovie(imdbID)
+
+		if err != nil {
+			mc.dbLogger.Alerts("ERROR", "Error in adding moi=vies to queue", gin.H{
+				"error": err,
+				"imdbID": imdbID,
+				"endpoint": "/AddMovie",
+			})
+			skipped = append(skipped, imdbID)
+			continue
+		}
 		added = append(added, imdbID)
 	}
 

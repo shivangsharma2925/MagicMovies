@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/queue"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/routes"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/services"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/workers"
@@ -23,19 +24,13 @@ import (
 
 func main() {
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	// Load config (env)
-	port := getEnv("PORT", "8080")
-
 	// Initialize structured logger
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
 	// Set Gin mode (important for production), this removed logging and extra details thus taking less resources
 	gin.SetMode(gin.ReleaseMode)
 
-	// creates a new router instance with two middleware already attached, logging and recovery. This will create middlewares with default behaviour, so New() gived more manual access
+	// creates a new router instance with two middleware already attached, logging and recovery. This will create middlewares with default behaviour, so New() gives more manual access
 	// router := gin.Default()
 	router := gin.New()
 
@@ -48,9 +43,12 @@ func main() {
 		logger.Warn("No .env file found")
 	}
 
+	// Load config (env)
+	port := getEnv("PORT", "8080")
+
 	mongoURI := os.Getenv("MONGODB_URI")
 	dbName := os.Getenv("DATABASE_NAME")
-
+	
 	if mongoURI == "" || dbName == "" {
 		logger.Error("Missing env variables")
 		os.Exit(1)
@@ -61,20 +59,30 @@ func main() {
 		logger.Error("DB init failed", "error", err)
 		os.Exit(1)
 	}
-
+	
 	if err := database.InitDB(db, logger); err != nil {
 		logger.Warn("DB init failed", "error", err)
 	}
 
+	// Database logs and Alerts initialization
 	var dbLogger *dblogger.DBLogger
 	dbLogger = dblogger.NewDBLogger(db, logger)
+
+	//connect to Redis
+	database.InitRedis()
+
+	// Asynq Redis Options
+	redisOpt := queue.NewRedisConnOpt()
+
+	// Asynq Client
+	queue.InitAsynqClient(redisOpt)
 
 	// Initialize services with dependencies
 	movieServices := services.NewMovieService(db, dbLogger)
 	jobServices := services.NewJobService(db)
 
-	//Initialize 3 parallel worker
-	workers.StartWorkers(ctx, movieServices, jobServices, 3)
+	// Worker Server
+	go workers.StartWorkerServer(movieServices, jobServices, redisOpt)
 
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 
@@ -85,7 +93,7 @@ func main() {
 			origins[i] = strings.TrimSpace(origins[i])
 		}
 	} else {
-		origins = []string{"http://localhost:5173"}
+		origins = []string{"http://localhost:3000"}
 	}
 
 	//CORS policy
@@ -131,9 +139,6 @@ func main() {
 	<-quit // This line blocks. The code sits here and waits until a signal is received.
 
 	logger.Info("Shutting down server...")
-
-	// stop workers
-	cancel()
 
 	// 5 seconds are given for all the pending requests to complete after that server will terminate them forcefully
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)

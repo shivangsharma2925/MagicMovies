@@ -29,10 +29,10 @@ func NewMovieService(db *database.MongoDB, logger *dblogger.DBLogger) *MovieServ
 		genreMap: make(map[string]models.Genre),
 	}
 
-	err := utilities.WithRetry(3, context.Background(), ms.loadGenres)
+	err := ms.loadGenres()
 	if err != nil {
-		logger.Alerts("ERROR", "Failed to load genres after retries", map[string]any{
-			"error": err.Error(),
+		logger.Alerts("ERROR", "Failed to load genres", map[string]any{
+			"error": err,
 		})
 		panic("Failed to Load Genres")
 	}
@@ -101,8 +101,6 @@ func (ms *MovieService) ProcessMovie(imdbID string, ctx context.Context) error {
 }
 
 func (ms *MovieService) MovieExists(id string, ctx context.Context) (bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
 
 	moviesCollection := ms.db.Collection("movies")
 
