@@ -35,10 +35,20 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 			SetName("movies_unique_imdbID"),
 	}
 
-	moviesTextIndex := mongo.IndexModel{
-		Keys: bson.M{"title": "text"}, //mongo has some stop words like "the,and,or,a," etc which will be ignored
+	normalizedTitleIndex := mongo.IndexModel{
+		Keys: bson.M{
+			"title_normalized": 1,
+		},
 		Options: options.Index().
-			SetName("movies_text_title"),
+			SetName("movies_normalized_title"),
+	}
+
+	searchTokensIndex := mongo.IndexModel{
+		Keys: bson.M{
+			"search_tokens": 1,
+		},
+		Options: options.Index().
+			SetName("movies_search_tokens"),
 	}
 
 	jobsIndex := mongo.IndexModel{
@@ -50,7 +60,7 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 
 	_, err := AlertsCollection.Indexes().CreateOne(ctx, alertsIndex)
 	_, err = logsLollection.Indexes().CreateOne(ctx, logsIndex)
-	_, err = moviesCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{moviesIndex, moviesTextIndex,})
+	_, err = moviesCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{moviesIndex, normalizedTitleIndex, searchTokensIndex,})
 	_, err = jobsCollection.Indexes().CreateOne(ctx, jobsIndex)
 
 	return err

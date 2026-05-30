@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ func WithRetry(attempts int, ctx context.Context, fn func() error) error {
 	var err error
 
 	for i := 0; i < attempts; i++ {
-		
+
 		// added this so that retry won't delay the shutdown too long
 		select {
 		case <-ctx.Done():
@@ -118,12 +119,28 @@ func GetRanking(rating float64) models.Ranking {
 func MapToSchema(data *models.MovieData) *models.Movie {
 
 	return &models.Movie{
-		ImdbID:      data.ImdbID,
-		Title:       data.Title,
-		PosterPath:  data.Poster,
-		YouTubeID:   data.YoutubeID,
-		Genre:       data.Genres,
-		AdminReview: "", // default empty
-		Ranking:     data.Ranking,
+		ImdbID:          data.ImdbID,
+		Title:           data.Title,
+		TitleNormalized: NormalizeText(data.Title),
+		SearchTokens:    GenerateSearchTokens(data.Title),
+		PosterPath:      data.Poster,
+		YouTubeID:       data.YoutubeID,
+		Genre:           data.Genres,
+		AdminReview:     "", // default empty
+		Ranking:         data.Ranking,
 	}
+}
+
+var specialChars = regexp.MustCompile(`[^a-zA-Z0-9\s]+`)
+
+func NormalizeText(text string) string {
+	text = strings.ToLower(text)
+
+	text = specialChars.ReplaceAllString(text, "")
+
+	text = strings.TrimSpace(text)
+
+	text = strings.Join(strings.Fields(text), " ")
+
+	return text
 }

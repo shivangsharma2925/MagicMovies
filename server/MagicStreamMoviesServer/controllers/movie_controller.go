@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -60,83 +62,84 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 
 	search := c.Query("search")
 
-	// Instead of page and limit pagination, using Cursor based pagination,
-	// if page or limit is not send in the URL, it will take the default value of 1 and 10 respectively.
-	// page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
-	// if err != nil || page < 1 {
-	// 	page = 1
-	// }
+	search = utilities.NormalizeText(search)
 
-	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	if err != nil || limit < 1 {
-		limit = 10
-	}
-
-	cursorID := c.Query("cursor")
-
-	// skip := (page - 1) * limit
-
-	filter := bson.M{}
-
-	if search != "" {
-		if len(search) < 3 {
-			filter = bson.M{
-				"title": bson.M{
-					"$regex":   "^" + search, // ^ = starts with, all words that starts with search string are matched
-					"$options": "i",          // case-insensitive
-				},
-			}
-		} else {
-			filter = bson.M{
-				"$text": bson.M{
-					"$search": search,
-				},
-			}
-		}
-	}
-
-	// cursor pagination
-	if cursorID != "" {
-
-		objectID, err := primitive.ObjectIDFromHex(cursorID)
-
-		if err == nil {
-			filter["_id"] = bson.M{
-				"$lt": objectID,
-			}
-		}
-	}
-
-	findOptions := options.Find().
-		SetLimit(int64(limit)).
-		SetSort(bson.D{{Key: "_id", Value: -1}}) // sort descending wise on _id since mongo db '_id' is based on time stamp(latest entries has larger _id value)
-
-	// findOptions := options.Find().
-	// 	SetSkip(int64(skip)).
-	// 	SetLimit(int64(limit))
-
-	movies := []models.Movie{}
-
-	movieCollection := mc.db.Collection("movies")
-
-	cursor, err := movieCollection.Find(ctx, filter, findOptions)
-
-	if err != nil {
-		mc.dbLogger.Alerts("ERROR", "Failed to fetch movies", gin.H{
-			"endpoint": "/GetMovies",
-			"error":    err.Error(),
-		})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch movies"})
+	if search != "" && len(search) != 1 {
+		mc.GetSearchedMovies(c, ctx, search)
 		return
-	}
-	defer cursor.Close(ctx)
+	} else {
 
-	// Streaming instead of cursor.All()
-	for cursor.Next(ctx) {
-		var movie models.Movie
+		// Instead of page and limit pagination, using Cursor based pagination,
+		// if page or limit is not send in the URL, it will take the default value of 1 and 10 respectively.
+		// page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+		// if err != nil || page < 1 {
+		// 	page = 1
+		// }
 
-		if err := cursor.Decode(&movie); err != nil {
-			mc.dbLogger.Alerts("ERROR", "Decode error", gin.H{
+		limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+		if err != nil || limit < 1 {
+			limit = 10
+		}
+
+		cursorID := c.Query("cursor")
+
+		// skip := (page - 1) * limit
+
+		filter := bson.M{}
+
+		// cursor pagination
+		if cursorID != "" {
+
+			objectID, err := primitive.ObjectIDFromHex(cursorID)
+
+			if err == nil {
+				filter["_id"] = bson.M{
+					"$lt": objectID,
+				}
+			}
+		}
+
+		findOptions := options.Find().
+			// 	SetSkip(int64(skip)).
+			SetLimit(int64(limit)).
+			SetSort(bson.D{{Key: "_id", Value: -1}}) // sort descending wise on _id since mongo db '_id' is based on time stamp(latest entries has larger _id value)
+
+		movieCollection := mc.db.Collection("movies")
+
+		// NO SEARCH
+
+		movies := []models.Movie{}
+
+		cursor, err := movieCollection.Find(ctx, filter, findOptions)
+
+		if err != nil {
+			mc.dbLogger.Alerts("ERROR", "Failed to fetch movies", gin.H{
+				"endpoint": "/GetMovies",
+				"error":    err.Error(),
+			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch movies"})
+			return
+		}
+		defer cursor.Close(ctx)
+
+		// Streaming instead of cursor.All()
+		for cursor.Next(ctx) {
+			var movie models.Movie
+
+			if err := cursor.Decode(&movie); err != nil {
+				mc.dbLogger.Alerts("ERROR", "Decode error", gin.H{
+					"endpoint": "/GetMovies",
+					"error":    err.Error(),
+				})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+				return
+			}
+
+			movies = append(movies, movie)
+		}
+
+		if err := cursor.Err(); err != nil {
+			mc.dbLogger.Alerts("ERROR", "Cursor error", gin.H{
 				"endpoint": "/GetMovies",
 				"error":    err.Error(),
 			})
@@ -144,34 +147,191 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 			return
 		}
 
-		movies = append(movies, movie)
-	}
+		var nextCursor any = nil
 
-	if err := cursor.Err(); err != nil {
-		mc.dbLogger.Alerts("ERROR", "Cursor error", gin.H{
-			"endpoint": "/GetMovies",
-			"error":    err.Error(),
+		if len(movies) > 0 {
+			nextCursor = movies[len(movies)-1].ID.Hex()
+		}
+
+		// c.JSON(http.StatusOK, movies)
+
+		c.JSON(http.StatusOK, gin.H{
+			"movies":     movies,
+			"nextCursor": nextCursor,
+			"hasMore":    len(movies) == limit,
 		})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
-		return
 	}
-
-	var nextCursor any = nil
-
-	if len(movies) > 0 {
-		nextCursor = movies[len(movies)-1].ID.Hex()
-	}
-
-	// c.JSON(http.StatusOK, movies)
-
-	c.JSON(http.StatusOK, gin.H{
-		"movies":     movies,
-		"nextCursor": nextCursor,
-		"hasMore":    len(movies) == limit,
-	})
 
 	//mustMarshal is not efficient and unsafe as it silently ignores error
 	// c.Data(http.StatusOK, "application/json", mustMarshal(movies))
+}
+
+func (mc *MovieController) GetSearchedMovies(c *gin.Context, ctx context.Context, search string) {
+
+	var finalMovies []models.Movie
+
+	var scoredMovies []models.ScoredMovie //for sending movies with best match first
+
+	movieMap := make(map[string]bool)
+
+	// STAGE 1 — PREFIX REGEX SEARCH
+
+	prefixFilter := bson.M{
+		"title_normalized": bson.M{
+			"$regex":   "^" + regexp.QuoteMeta(search),
+			"$options": "i",
+		},
+	}
+
+	movieCollection := mc.db.Collection("movies")
+
+	prefixCursor, err := movieCollection.Find(c, prefixFilter, options.Find().SetLimit(10))
+
+	if err == nil {
+
+		var prefixMovies []models.Movie
+
+		prefixCursor.All(context.Background(), &prefixMovies)
+
+		for _, movie := range prefixMovies {
+
+			if !movieMap[movie.ImdbID] {
+
+				movieMap[movie.ImdbID] = true
+
+				scoredMovies = append(scoredMovies, models.ScoredMovie{
+					Movie: movie,
+					Score: 100,
+				})
+			}
+		}
+	}
+
+	// STAGE 2 — TOKEN SEARCH FALLBACK
+
+	if len(scoredMovies) < 10 {
+
+		searchTokens := utilities.GenerateSearchTokens(search)
+
+		if len(searchTokens) > 0 {
+
+			tokenFilter := bson.M{
+				"search_tokens": bson.M{
+					"$in": searchTokens,
+				},
+			}
+
+			tokenCursor, err := movieCollection.Find(c, tokenFilter, options.Find().SetLimit(20))
+
+			if err == nil {
+
+				var tokenMovies []models.Movie
+
+				tokenCursor.All(context.Background(), &tokenMovies)
+
+				for _, movie := range tokenMovies {
+
+					if !movieMap[movie.ImdbID] {
+
+						movieMap[movie.ImdbID] = true
+
+						score := utilities.CalculateTokenScore(
+							searchTokens,
+							movie.SearchTokens,
+						)
+
+						// medium priority
+						finalScore := float64(score * 10)
+
+						scoredMovies = append(
+							scoredMovies,
+							models.ScoredMovie{
+								Movie: movie,
+								Score: finalScore,
+							},
+						)
+					}
+				}
+			}
+		}
+	}
+
+	// STAGE 3 — FUZZY SEARCH FALLBACK
+	if len(scoredMovies) < 10 {
+
+		searchTokens := utilities.GenerateSearchTokens(search)
+
+		fuzzyThreshold := 0.7
+
+		if len(searchTokens) == 1 {
+			fuzzyThreshold = 0.45
+		}
+
+		if len(searchTokens) > 0 {
+
+			fuzzyCursor, err := movieCollection.Find(
+				context.Background(),
+				bson.M{},
+				options.Find().
+					SetLimit(200).
+					SetProjection(bson.M{
+						"title": 1,
+						"title_normalized": 1,
+						"search_tokens": 1,
+						"poster_path": 1,
+						"imdb_id": 1,
+						"youtube_id": 1,
+						"genre": 1,
+						"ranking": 1,
+						"admin_review": 1,
+					}),
+			)
+
+			var fuzzyMovies []models.Movie
+
+			if err == nil {
+				fuzzyCursor.All(context.Background(), &fuzzyMovies)
+
+				for _, movie := range fuzzyMovies {
+
+					if !movieMap[movie.ImdbID] {
+
+						score := utilities.CalculateFuzzyTokenScore(searchTokens, movie.SearchTokens)
+
+						if score > fuzzyThreshold {
+							movieMap[movie.ImdbID] = true
+
+							scoredMovies = append(scoredMovies, models.ScoredMovie{
+								Movie: movie,
+								Score: score,
+							})
+						}
+					}
+				}
+			}
+		}			
+	}
+
+	slices.SortStableFunc(scoredMovies, func(a, b models.ScoredMovie) int {
+		if a.Score > b.Score {
+			return -1
+		}
+		if a.Score < b.Score {
+			return 1
+		}
+		return 0
+	})
+
+	for _, scoredMovie := range scoredMovies {
+		finalMovies = append(
+			finalMovies,
+			scoredMovie.Movie,
+		)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"movies": finalMovies,
+	})
 }
 
 func (mc *MovieController) GetMovie(c *gin.Context) {
@@ -199,6 +359,57 @@ func (mc *MovieController) GetMovie(c *gin.Context) {
 	}
 
 	c.Data(http.StatusOK, "application/json", mustMarshal(movie))
+}
+
+func (mc *MovieController) GetSuggestions(c *gin.Context) {
+
+	search := c.Query("q")
+
+	if len(strings.TrimSpace(search)) < 2 {
+		c.JSON(http.StatusOK, []models.Movie{})
+		return
+	}
+
+	search = utilities.NormalizeText(search)
+
+	filter := bson.M{
+		"title_normalized": bson.M{
+			"$regex":   search,
+			"$options": "i", //case-insensitive
+		},
+	}
+
+	opts := options.Find().
+		SetLimit(8).
+		SetProjection(bson.M{
+			"title":       1,
+			"poster_path": 1,
+			"imdb_id":     1,
+			"_id":         0,
+		})
+
+	movieCollection := mc.db.Collection("movies")
+
+	cursor, err := movieCollection.Find(context.Background(), filter, opts)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch suggestions"})
+		return
+	}
+
+	var movies []models.MovieSuggestion
+
+	err = cursor.All(
+		context.Background(),
+		&movies,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch suggestions"})
+		return
+	}
+
+	c.JSON(http.StatusOK, movies)
 }
 
 func (mc *MovieController) AddMovie(c *gin.Context) {
@@ -286,8 +497,8 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 
 		if err != nil {
 			mc.dbLogger.Alerts("ERROR", "Error in adding moi=vies to queue", gin.H{
-				"error": err,
-				"imdbID": imdbID,
+				"error":    err,
+				"imdbID":   imdbID,
 				"endpoint": "/AddMovie",
 			})
 			skipped = append(skipped, imdbID)

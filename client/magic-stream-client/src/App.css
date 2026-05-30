@@ -1,3 +1,36 @@
+/* Suggestion CSS start */
+
+.suggestion-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateX(2px);
+}
+
+.suggestion-item:not(:last-child) {
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.suggestionsList{
+  border-radius: 18px;
+  max-height: 45vh;
+  overflow-y: auto !important;
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.suggestionsList {
+  scrollbar-width: none;  /* Firefox */ 
+  -ms-overflow-style: none; /* IE and Edge  */
+}
+
+.suggestionsList::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */ 
+}
+
+/* Suggestion CSS end */
+
+/* new-movie button CSS start */
+
 .new-movies-banner {
   position: fixed;
   top: 80px;
@@ -27,3 +60,5 @@
     transform: translateX(-50%) translateY(0);
   }
 }
+
+/* new-movie button CSS end */

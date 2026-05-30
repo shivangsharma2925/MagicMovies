@@ -1,44 +1,34 @@
-import { useEffect, useRef, useState } from "react";
-import axiosConfig from "../../api/axiosConfig";
+import { useEffect, useState } from "react";
 import Movies from "../movies/Movies";
 import { Button, Form } from "react-bootstrap";
 import Spinner from "../../utils/Spinner";
 import { useNavigate } from "react-router-dom";
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import UseWebSocket from "../../hook/UseWebSocket";
+import useDebounce from "../../hook/UseDebounce";
+import { fetchMovies, fetchMovieSuggestions } from "./GetMovieServices";
+import useInfiniteScroll from "../../hook/UseInfiniteScroll";
+import SearchBar from "./SearchBar";
 
 const Home = () => {
   const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [hasNewMovies, setHasNewMovies] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
   const navigate = useNavigate();
-  const observerRef = useRef();
   const queryClient = useQueryClient();
 
-  const socket  = UseWebSocket();
+  const socket = UseWebSocket();
 
   let message = "";
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 500); // 500ms delay
-
-    return () => clearTimeout(timer);
-  }, [search]);
+  const debouncedSearch = useDebounce(search, 500);
 
   const trimmedSearch = debouncedSearch.trim();
-
-  const fetchMovies = async ({ pageParam = "" }) => {
-
-    const url = trimmedSearch
-      ? `/movies?search=${trimmedSearch}&cursor=${pageParam}&limit=10`
-      : `/movies?cursor=${pageParam}&limit=10`;
-
-    const response = await axiosConfig.get(url);
-
-    return response.data;
-  };
 
   /*
     The data in the react query movies array is stored as an set of all the pages we have ordered so far from server,
@@ -75,7 +65,8 @@ const Home = () => {
   } = useInfiniteQuery({
     queryKey: ["movies", trimmedSearch],
 
-    queryFn: fetchMovies,
+    queryFn: ({ pageParam = "" }) =>
+      fetchMovies({ search: trimmedSearch, pageParam }),
 
     initialPageParam: "",
 
@@ -90,37 +81,24 @@ const Home = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  useEffect(() => {
-    const currentTarget = observerRef.current;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage();
-        }
-      },
-      {
-        rootMargin: "100px", //buffer till when the target element intersects or visible on the screen
-        threshold: 0.1, // tells how much the target element should intersects/falls with/under the margin where 1 = complete
-      },
-    );
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["movie-suggestions", trimmedSearch],
 
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
+    queryFn: () => fetchMovieSuggestions(trimmedSearch),
 
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
-    };
-  }, [fetchNextPage, hasNextPage]);
+    enabled: trimmedSearch.trim().length >= 2,
+
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const observerRef = useInfiniteScroll(fetchNextPage, hasNextPage);
 
   useEffect(() => {
     const Socket = socket.current;
 
     const handler = (event) => {
       const data = JSON.parse(event.data);
-
+      // console.log(data);
       if (data.type === "new_movie") {
         setHasNewMovies(true);
       }
@@ -131,7 +109,7 @@ const Home = () => {
     return () => {
       Socket.removeEventListener("message", handler);
     };
-  });
+  }, [socket]);
 
   // flatten movies data
   const allMovies = movies?.pages?.flatMap((page) => page.movies ?? []) ?? [];
@@ -162,8 +140,9 @@ const Home = () => {
           </button>
         </div>
       )}
+
       <div
-        className="sticky-top py-3"
+        className="sticky-top pt-3 pb-4"
         style={{
           zIndex: 1020,
           top: "60px",
@@ -176,13 +155,13 @@ const Home = () => {
           <div style={{ flex: 1 }}></div>
 
           <div style={{ flex: 2 }}>
-            <Form.Control
-              className="shadow-sm border-0 bg-light"
-              type="text"
-              placeholder="Search movies..."
-              style={{ borderRadius: "20px" }}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+            <SearchBar
+              search={search}
+              setSearch={setSearch}
+              suggestions={suggestions}
+              onSuggestionClick={(title) => {setSearch(title);setShowSuggestions(false);}}
+              showSuggestions={showSuggestions}
+              setShowSuggestions={setShowSuggestions}
             />
           </div>
 
@@ -198,17 +177,20 @@ const Home = () => {
           </div>
         </div>
       </div>
-      {isLoading ? (
-        <h2>
+
+      <div className="mt-4">
+        {isLoading ? (
           <Spinner />
-        </h2>
-      ) : (
-        <>
-          <Movies movies={allMovies} message={message} />
-          <h2>{isFetchingNextPage && <Spinner />}</h2>
-          <div ref={observerRef} style={{ height: "20px" }} />
-        </>
-      )}
+        ) : (
+          <>
+            <Movies movies={allMovies} message={message} />
+
+            {isFetchingNextPage && <Spinner />}
+
+            <div ref={observerRef} style={{ height: "20px" }} />
+          </>
+        )}
+      </div>
     </>
   );
 };

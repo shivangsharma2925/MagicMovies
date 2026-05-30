@@ -39,6 +39,7 @@ func SetupRoutes(
 
 	api.GET("/movies", ipLimiter.IPMiddleware(), movieController.GetMovies)
 	api.GET("/genres", ipLimiter.IPMiddleware(), movieController.GetGenres)
+	api.GET("/movies/suggestions", movieController.GetSuggestions)
 
 	// Protected routes
 	protected := api.Group("/")

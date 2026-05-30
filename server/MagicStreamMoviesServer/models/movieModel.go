@@ -7,14 +7,16 @@ import (
 )
 
 type Movie struct {
-	ID          primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
-	ImdbID      string             `bson:"imdb_id" json:"imdb_id" validate:"required"`
-	Title       string             `bson:"title" json:"title" validate:"required,min=2,max=500"`
-	PosterPath  string             `bson:"poster_path" json:"poster_path" validate:"required,url"`
-	YouTubeID   string             `bson:"youtube_id" json:"youtube_id" validate:"required"`
-	Genre       []Genre            `bson:"genre" json:"genre" validate:"required,dive"`
-	AdminReview string             `bson:"admin_review" json:"admin_review" validate:"required"`
-	Ranking     Ranking            `bson:"ranking" json:"ranking" validate:"required"`
+	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
+	ImdbID          string             `bson:"imdb_id" json:"imdb_id" validate:"required"`
+	Title           string             `bson:"title" json:"title" validate:"required,min=2,max=500"`
+	TitleNormalized string             `bson:"title_normalized,omitempty" json:"-"`
+	SearchTokens    []string           `bson:"search_tokens,omitempty" json:"-"`
+	PosterPath      string             `bson:"poster_path" json:"poster_path" validate:"required,url"`
+	YouTubeID       string             `bson:"youtube_id" json:"youtube_id" validate:"required"`
+	Genre           []Genre            `bson:"genre" json:"genre" validate:"required,dive"`
+	AdminReview     string             `bson:"admin_review" json:"admin_review" validate:"required"`
+	Ranking         Ranking            `bson:"ranking" json:"ranking" validate:"required"`
 }
 
 type Genre struct {
@@ -25,6 +27,17 @@ type Genre struct {
 type Ranking struct {
 	RankingValue int    `bson:"ranking_value" json:"ranking_value" validate:"required"`
 	RankingName  string `bson:"ranking_name" json:"ranking_name" validate:"required"` //oneof=Excellent Good Okay Bad Terible
+}
+
+type MovieSuggestion struct {
+	ImdbID     string `bson:"imdb_id" json:"imdb_id"`
+	Title      string `bson:"title" json:"title"`
+	PosterPath string `bson:"poster_path" json:"poster_path"`
+}
+
+type ScoredMovie struct {
+	Movie Movie
+	Score float64
 }
 
 type TMDBFindResponse struct {
