@@ -137,11 +137,16 @@ func (ms *MovieService) FetchMovieData(imdbID string, ctx context.Context) (*mod
 	youtubeID, trailerErr := ms.getTrailer(tmdbID, ctx) // optional failure
 
 	if youtubeID == "" || trailerErr != nil {
+		errMsg := ""
+		if trailerErr != nil {
+			errMsg = trailerErr.Error()
+		}
+
 		ms.DbLogger.Alerts("WARN", "No trailer Info found", map[string]any{
 			"endpoint": "/FetchMovieData",
 			"Imdb_ID":  imdbID,
 			"Tmdb_id":  tmdbID,
-			"error":    trailerErr.Error(),
+			"error":    errMsg,
 		})
 	}
 
