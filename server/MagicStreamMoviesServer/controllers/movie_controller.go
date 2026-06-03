@@ -64,7 +64,7 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 
 	search = utilities.NormalizeText(search)
 
-	if search != "" && len(search) != 1 {
+	if search != "" && len(search) > 2 {
 		mc.GetSearchedMovies(c, ctx, search)
 		return
 	} else {
@@ -166,7 +166,123 @@ func (mc *MovieController) GetMovies(c *gin.Context) {
 	// c.Data(http.StatusOK, "application/json", mustMarshal(movies))
 }
 
+// using ATLAS search for giving search results
 func (mc *MovieController) GetSearchedMovies(c *gin.Context, ctx context.Context, search string) {
+	movieCollection := mc.db.Collection("movies")
+
+	var movies []models.Movie
+
+	pipeline := mongo.Pipeline{
+		bson.D{
+			bson.E{Key: "$search", Value: bson.D{
+				bson.E{Key: "index", Value: "movies_search"},
+				bson.E{Key: "compound", Value: bson.D{
+					bson.E{Key: "should", Value: bson.A{
+
+						// 1. Exact title match (highest boost)
+						bson.D{
+							bson.E{Key: "text", Value: bson.D{
+								bson.E{Key: "query", Value: search},
+								bson.E{Key: "path", Value: "title"},
+								bson.E{Key: "score", Value: bson.D{
+									bson.E{Key: "boost", Value: bson.D{
+										bson.E{Key: "value", Value: 10},
+									}},
+								}},
+							}},
+						},
+
+						// 2. Prefix / autocomplete match
+						bson.D{
+							bson.E{Key: "autocomplete", Value: bson.D{
+								bson.E{Key: "query", Value: search},
+								bson.E{Key: "path", Value: "title"},
+								bson.E{Key: "tokenOrder", Value: "sequential"},
+								bson.E{Key: "score", Value: bson.D{
+									bson.E{Key: "boost", Value: bson.D{
+										bson.E{Key: "value", Value: 5},
+									}},
+								}},
+							}},
+						},
+
+						// 3. Fuzzy match (lowest boost)
+						bson.D{
+							bson.E{Key: "autocomplete", Value: bson.D{
+								bson.E{Key: "query", Value: search},
+								bson.E{Key: "path", Value: "title"},
+								bson.E{Key: "tokenOrder", Value: "sequential"},
+								bson.E{Key: "fuzzy", Value: bson.D{
+									bson.E{Key: "maxEdits", Value: 2},
+								}},
+								bson.E{Key: "score", Value: bson.D{
+									bson.E{Key: "boost", Value: bson.D{
+										bson.E{Key: "value", Value: 2},
+									}},
+								}},
+							}},
+						},
+					}},
+					bson.E{Key: "minimumShouldMatch", Value: 1},
+				}},
+			}},
+		},
+
+		bson.D{
+			bson.E{Key: "$project", Value: bson.D{
+				bson.E{Key: "imdb_id", Value: 1},
+				bson.E{Key: "title", Value: 1},
+				bson.E{Key: "poster_path", Value: 1},
+				bson.E{Key: "youtube_id", Value: 1},
+				bson.E{Key: "genre", Value: 1},
+				bson.E{Key: "ranking", Value: 1},
+				bson.E{Key: "admin_review", Value: 1},
+
+				// Useful for debugging ranking.
+				bson.E{Key: "score", Value: bson.D{
+					bson.E{Key: "$meta", Value: "searchScore"},
+				}},
+			}},
+		},
+
+		bson.D{
+			bson.E{Key: "$limit", Value: 20},
+		},
+	}
+
+	cursor, err := movieCollection.Aggregate(ctx, pipeline)
+
+	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "Error in searching movies", gin.H{
+			"endpoint": "/GetSearchedMovies",
+			"error": err.Error(),
+		})
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to search movies",
+		})
+		return
+	}
+
+	if err := cursor.All(ctx, &movies); err != nil {
+		mc.dbLogger.Alerts("ERROR", "Error in parsing movies", gin.H{
+			"endpoint": "/GetSearchedMovies",
+			"error": err.Error(),
+		})
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to search movies",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"movies": movies,
+	})
+}
+
+// Manually giving search results - not using anywhere
+func (mc *MovieController) GetSearchedMoviesManually(c *gin.Context, ctx context.Context, search string) {
 
 	var finalMovies []models.Movie
 
@@ -275,15 +391,15 @@ func (mc *MovieController) GetSearchedMovies(c *gin.Context, ctx context.Context
 				options.Find().
 					SetLimit(200).
 					SetProjection(bson.M{
-						"title": 1,
+						"title":            1,
 						"title_normalized": 1,
-						"search_tokens": 1,
-						"poster_path": 1,
-						"imdb_id": 1,
-						"youtube_id": 1,
-						"genre": 1,
-						"ranking": 1,
-						"admin_review": 1,
+						"search_tokens":    1,
+						"poster_path":      1,
+						"imdb_id":          1,
+						"youtube_id":       1,
+						"genre":            1,
+						"ranking":          1,
+						"admin_review":     1,
 					}),
 			)
 
@@ -309,7 +425,7 @@ func (mc *MovieController) GetSearchedMovies(c *gin.Context, ctx context.Context
 					}
 				}
 			}
-		}			
+		}
 	}
 
 	slices.SortStableFunc(scoredMovies, func(a, b models.ScoredMovie) int {
@@ -365,34 +481,46 @@ func (mc *MovieController) GetSuggestions(c *gin.Context) {
 
 	search := c.Query("q")
 
-	if len(strings.TrimSpace(search)) < 2 {
+	if len(strings.TrimSpace(search)) < 3 {
 		c.JSON(http.StatusOK, []models.Movie{})
 		return
 	}
 
 	search = utilities.NormalizeText(search)
 
-	filter := bson.M{
-		"title_normalized": bson.M{
-			"$regex":   search,
-			"$options": "i", //case-insensitive
-		},
+	pipeline := mongo.Pipeline{
+		//stage 1 = search with auto complete, typo tolerance, candidates ranking
+		bson.D{{Key: "$search", Value: bson.D{
+			{Key: "index", Value: "movies_search"},
+			{Key: "autocomplete", Value: bson.D{
+				{Key: "query", Value: search},
+				{Key: "path", Value: "title"},
+				{Key: "tokenOrder", Value: "sequential"},
+				{Key: "fuzzy", Value: bson.D{
+					{Key: "maxEdits", Value: 2},
+				}},
+			}},
+		}}},
+		//stage 2 = project, same as projection
+		bson.D{{Key: "$project", Value: bson.D{
+			{Key: "_id", Value: 0},
+			{Key: "imdb_id", Value: 1},
+			{Key: "title", Value: 1},
+			{Key: "poster_path", Value: 1},
+		}}},
+		//stage 3 = limit
+		bson.D{{Key: "$limit", Value: 8}},
 	}
-
-	opts := options.Find().
-		SetLimit(8).
-		SetProjection(bson.M{
-			"title":       1,
-			"poster_path": 1,
-			"imdb_id":     1,
-			"_id":         0,
-		})
 
 	movieCollection := mc.db.Collection("movies")
 
-	cursor, err := movieCollection.Find(context.Background(), filter, opts)
+	cursor, err := movieCollection.Aggregate(context.Background(), pipeline)
 
 	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "Error in fetching movies", gin.H{
+			"endpoint": "/GetSuggestions",
+			"error": err.Error(),
+		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch suggestions"})
 		return
 	}
@@ -405,6 +533,10 @@ func (mc *MovieController) GetSuggestions(c *gin.Context) {
 	)
 
 	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "Failed to parse suggestions", gin.H{
+			"endpoint": "/GetSuggestions",
+			"error": err.Error(),
+		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch suggestions"})
 		return
 	}

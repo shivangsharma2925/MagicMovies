@@ -15,7 +15,7 @@ const Movie = ({ movie }) => {
     <div className="col-md-4 mb-4" id={movie._id}>
       <div className="card h-100 shadow-sm movie-card">
         <Link
-          to={`/stream/${movie.youtube_id}`}
+          to={`/stream/${movie.youtube_id?movie.youtube_id:null}`}
           style={{ textDecoration: "none", color: "inherit" }}
         >
           <div style={{ position: "relative" }}>

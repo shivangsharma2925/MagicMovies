@@ -11,10 +11,10 @@ const StreamMovie = () => {
   let params = useParams();
   let key = params.yt_id;
   const Player = ReactPlayer.default;
-
+  
   return (
     <div style={styles.playerContainer}>
-      {key != null ? (
+      {key != "null" && key != null ? (
         <Player
           controls={true}
           playing={true}
@@ -22,7 +22,7 @@ const StreamMovie = () => {
           width="100%"
           height="100%"
         />
-      ) : null}
+      ) : <h2 className="m-auto">Trailer not available.</h2>}
     </div>
   );
 };

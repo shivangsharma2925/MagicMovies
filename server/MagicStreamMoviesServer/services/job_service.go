@@ -18,9 +18,33 @@ type JobService struct {
 }
 
 func NewJobService(db *database.MongoDB) *JobService {
-	return &JobService{
+
+	JobService := &JobService{
 		db:            db,
 		jobCollection: db.Collection("jobs"),
+	}
+	
+	JobService.UpdateStaleJobs()
+
+	return JobService
+}
+
+func (js *JobService) UpdateStaleJobs() {
+	filter := bson.M{
+		"status": "processing",
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"status": "failed",
+		},
+	}
+
+	_, err := js.jobCollection.UpdateMany(context.Background(), filter, update)
+
+	if err != nil {
+		fmt.Printf("error in incrementing the attempts: %s", err)
+		return
 	}
 }
 

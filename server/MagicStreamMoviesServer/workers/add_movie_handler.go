@@ -3,6 +3,7 @@ package workers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -20,9 +21,33 @@ type MoviesProcessor struct {
 func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) error {
 	var payload tasks.MoviePayload
 
-	if err := json.Unmarshal(t.Payload(), &payload,); err != nil { return err }
+	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
+		return err
+	}
 
 	imdbID := payload.ImdbID
+
+	// So that any panic is treated as normal error and retry 
+	defer func() {
+		if r := recover(); r != nil {
+
+			panicErr := fmt.Errorf("panic: %v", r)
+
+			p.jobService.MarkFailed(imdbID, panicErr.Error())
+
+			websocket.BroadcastJobUpdate(gin.H{
+				"type":    "job_update",
+				"imdb_id": imdbID,
+				"status":  "failed",
+			})
+
+			p.movieService.DbLogger.Alerts("ERROR", "Error in processing movie", map[string]any{
+				"endpoint": "/processMovies",
+				"movieID":  imdbID,
+				"error":    panicErr.Error(),
+			})
+		}
+	}()
 
 	// MARK PROCESSING
 	attempts := p.jobService.IncrementAttempts(imdbID)
@@ -34,9 +59,9 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	)
 
 	websocket.BroadcastJobUpdate(gin.H{
-		"type":    "job_update",
-		"imdb_id": imdbID,
-		"status":  "processing",
+		"type":     "job_update",
+		"imdb_id":  imdbID,
+		"status":   "processing",
 		"attempts": attempts,
 	})
 
@@ -66,9 +91,9 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	p.jobService.MarkDone(imdbID)
 
 	websocket.BroadcastJobUpdate(gin.H{
-		"type":    "job_update",
-		"imdb_id": imdbID,
-		"status":  "done",
+		"type":     "job_update",
+		"imdb_id":  imdbID,
+		"status":   "done",
 		"attempts": attempts,
 	})
 

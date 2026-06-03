@@ -35,21 +35,21 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 			SetName("movies_unique_imdbID"),
 	}
 
-	normalizedTitleIndex := mongo.IndexModel{
-		Keys: bson.M{
-			"title_normalized": 1,
-		},
-		Options: options.Index().
-			SetName("movies_normalized_title"),
-	}
+	// normalizedTitleIndex := mongo.IndexModel{
+	// 	Keys: bson.M{
+	// 		"title_normalized": 1,
+	// 	},
+	// 	Options: options.Index().
+	// 		SetName("movies_normalized_title"),
+	// }
 
-	searchTokensIndex := mongo.IndexModel{
-		Keys: bson.M{
-			"search_tokens": 1,
-		},
-		Options: options.Index().
-			SetName("movies_search_tokens"),
-	}
+	// searchTokensIndex := mongo.IndexModel{
+	// 	Keys: bson.M{
+	// 		"search_tokens": 1,
+	// 	},
+	// 	Options: options.Index().
+	// 		SetName("movies_search_tokens"),
+	// }
 
 	jobsIndex := mongo.IndexModel{
 		Keys: bson.M{"imdb_id": 1},
@@ -60,7 +60,7 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 
 	_, err := AlertsCollection.Indexes().CreateOne(ctx, alertsIndex)
 	_, err = logsLollection.Indexes().CreateOne(ctx, logsIndex)
-	_, err = moviesCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{moviesIndex, normalizedTitleIndex, searchTokensIndex,})
+	_, err = moviesCollection.Indexes().CreateMany(ctx, []mongo.IndexModel{moviesIndex})
 	_, err = jobsCollection.Indexes().CreateOne(ctx, jobsIndex)
 
 	return err
