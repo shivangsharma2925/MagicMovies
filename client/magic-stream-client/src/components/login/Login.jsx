@@ -11,15 +11,17 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
+    const [message, setMessage] = useState(null);
     const [loading, setLoading] = useState(false);
     const {setAuth} = UseAuth();
 
-    const naviagte = useNavigate()
+    const navigate = useNavigate()
     const location = useLocation();
     const from = location.state?.from?.pathname || "/";
 
     async function handleSubmit(e) {
         e.preventDefault();
+        setMessage("");
         setError(null);
         setLoading(true);
 
@@ -34,12 +36,60 @@ const Login = () => {
                 return;
             }
             setAuth(res.data);
-            // localStorage.setItem('user', JSON.stringify(res.data));
-            naviagte(from, {replace: true});
-        } catch (error) {
-            console.log(error);
-            setError("Something went wrong, try again!")
+            navigate(from, {replace: true});
+        } catch (err) {
+            console.log(err);
+            if(err.response?.data?.error && err.response?.data?.error === "Please verify your email first"){
+                const msg = <>Please <Button onClick={(e)=>handleVerifyonLogin(e, err.response.data.user_id)}>Verify</Button> your email first</>;
+                setError(msg);
+            }else setError(err.response?.data?.error || "Something went wrong, try again!")
         } finally{
+            setLoading(false);
+        }
+    }
+
+    async function handleVerifyonLogin(event, userId) {
+        event.preventDefault();
+
+        setError("");
+        setMessage("");
+        setLoading(true);
+        try {
+            await axiosConfig.post("/resend-verification", {
+                "user_id": userId
+            })
+
+            navigate(`/verify-email/${userId}`);
+
+        } catch (err) {
+            setError(err?.response?.data?.error || "Failed to send OTP");
+            console.log(err.response.data.error);
+        } finally{
+            setLoading(false);
+        }
+    } 
+
+    async function handleForgotPassword(e){
+        e.preventDefault();
+
+        setError("");
+        setMessage("");
+        setLoading(false);
+
+        if(email.length === 0){
+            setError("Enter Email address to Reset Password");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const res =await axiosConfig.post("/forgot-password", {
+                "emailid": email
+            })
+            setMessage(res.data.message);
+        } catch (error) {
+            setError(error.response.data.error || "Something went wrong, try again.")
+        }finally{
             setLoading(false);
         }
     }
@@ -52,6 +102,7 @@ const Login = () => {
                     <h2 className="fw-bold">Sign In</h2>
                     <p className="text-muted">Signin to your Magic Movie Stream account.</p>
                     {error && <div className="alert alert-danger py-2">{error}</div>}                
+                    {message && <div className="alert alert-success py-2">{message}</div>}                
                 </div>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
@@ -73,6 +124,11 @@ const Login = () => {
                             onChange={e => setPassword(e.target.value)}
                             required
                         />
+                        <div className="text-end">
+                            <small>
+                                <Link onClick={(e)=>handleForgotPassword(e)} className="text-muted text-decoration-none">Forgot Password?</Link>
+                            </small>
+                        </div>
                     </Form.Group>
                     <Button
                         variant="primary"

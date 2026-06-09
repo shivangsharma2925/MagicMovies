@@ -12,6 +12,8 @@ import UseAuth from "./hook/UseAuth";
 import StreamMovie from "./components/stream/StreamMovie";
 import Spinner from "./utils/Spinner";
 import AddMovie from "./components/addMovies/AddMovie";
+import VerifyEmail from "./components/verifyEmail/VerifyEmail";
+import ResetPassword from "./components/resetPassword/ResetPassword";
 
 function App() {
   const { loading } = UseAuth();
@@ -27,6 +29,8 @@ function App() {
           <Route index element={<Home />} />
           <Route path="register" element={<Register />} />
           <Route path="login" element={<Login />} />
+          <Route path="verify-email/:userId" element={<VerifyEmail />}/>
+          <Route path="reset-password" element={<ResetPassword />}/>
 
           {/* Protected routes */}
           <Route element={<RequiredAuth />}>

@@ -3,7 +3,7 @@ import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import axiosConfig from "../../api/axiosConfig";
-import { Link, Navigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import logo from '../../assets/MagicStreamLogo.png';
 
 const Register = () => {
@@ -15,7 +15,10 @@ const Register = () => {
     const [favouriteGenres, setFavouriteGenres] = useState([]);
     const [genres, setGenres] = useState([]);
     const [error, setError] = useState(null);
+    const [message, setMessage] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    const navigate = useNavigate();
 
     function handleGenreChange(e){
         const opts = Array.from(e.target.selectedOptions);
@@ -54,7 +57,12 @@ const Register = () => {
                 setError(res.data.error);
                 return;
             }
-            <Navigate to='/login' replace />
+            if(res.data.verification_sent){
+                setMessage("Account created, Verification Link sent to your Email.")
+                navigate(`/verify-email/${res.data.user_id}`);
+            }else{
+                setError("Unable to send Verification Link, click on Resend link.")
+            }
         }catch(err){
             console.log(err);
             setError("Registration failed, please try again.");
@@ -83,7 +91,8 @@ const Register = () => {
                     <img src={logo} alt="Logo" width={60} className="mb-2" />
                     <h2 className="fw-bold">Register</h2>
                     <p className="text-muted">Create your Magic Movie Stream account.</p>
-                    {error && <div className="alert alert-danger py-2">{error}</div>}                
+                    {error && <div className="alert alert-danger py-2">{error}</div>} 
+                    {message && <div className="alert alert-success py-2">{message}</div>}                
                 </div>
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">

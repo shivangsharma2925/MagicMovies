@@ -13,6 +13,7 @@ type User struct {
 	FirstName       string             `bson:"first_name" json:"first_name" validate:"required,min=2,max=100"`
 	LastName        string             `bson:"last_name" json:"last_name" validate:"required,min=2,max=100"`
 	Email           string             `bson:"email" json:"email" validate:"required,email"`
+	IsVerified      bool               `bson:"is_verified" json:"is_verified"`
 	Role            string             `bson:"role" json:"role" validate:"oneof=ADMIN USER"`
 	Password        string             `bson:"password" json:"password" validate:"required,min=6"`
 	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
@@ -45,6 +46,11 @@ type SignedDetails struct {
 }
 
 type SignedRefreshDetails struct {
-	UserId    string
+	UserId string
 	jwt.RegisteredClaims
+}
+
+type VerifyEmailRequest struct {
+	UserID string `json:"user_id" binding:"required"`
+	OTP    string `json:"otp" binding:"required,len=6"`
 }

@@ -18,8 +18,6 @@ import (
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/queue"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/routes"
-	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/services"
-	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/workers"
 )
 
 func main() {
@@ -48,7 +46,7 @@ func main() {
 
 	mongoURI := os.Getenv("MONGODB_URI")
 	dbName := os.Getenv("DATABASE_NAME")
-	
+
 	if mongoURI == "" || dbName == "" {
 		logger.Error("Missing env variables")
 		os.Exit(1)
@@ -59,7 +57,7 @@ func main() {
 		logger.Error("DB init failed", "error", err)
 		os.Exit(1)
 	}
-	
+
 	if err := database.InitDB(db, logger); err != nil {
 		logger.Warn("DB init failed", "error", err)
 	}
@@ -69,20 +67,13 @@ func main() {
 	dbLogger = dblogger.NewDBLogger(db, logger)
 
 	//connect to Redis
-	database.InitRedis()
+	redisClient := database.InitRedis()
 
 	// Asynq Redis Options
 	redisOpt := queue.NewRedisConnOpt()
 
 	// Asynq Client
 	queue.InitAsynqClient(redisOpt)
-
-	// Initialize services with dependencies
-	movieServices := services.NewMovieService(db, dbLogger)
-	jobServices := services.NewJobService(db)
-
-	// Worker Server
-	go workers.StartWorkerServer(movieServices, jobServices, redisOpt)
 
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 
@@ -108,7 +99,7 @@ func main() {
 	router.Use(cors.New(config))
 
 	// establish routes for requests
-	routes.SetupRoutes(router, db, dbLogger)
+	routes.SetupRoutes(router, db, dbLogger, redisOpt, redisClient)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{

@@ -2,23 +2,37 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/hibiken/asynq"
+	"github.com/redis/go-redis/v9"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/controllers"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/middleware"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/services"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/websocket"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/workers"
 )
 
 func SetupRoutes(
 	router *gin.Engine,
 	db *database.MongoDB,
 	dbLogger *dblogger.DBLogger,
+	redisOpt asynq.RedisClientOpt,
+	redisClient *redis.Client,
 ) {
+	// Initialize services with dependencies
+	OtpService := services.NewOTPService(redisClient)
+	EmailService := services.NewEmailService()
+	movieServices := services.NewMovieService(db, dbLogger)
+	jobServices := services.NewJobService(db)
 
 	// Initialize controllers with dependencies
 	movieController := controllers.NewMovieController(db, dbLogger)
-	userController := controllers.NewUserController(db, dbLogger)
+	userController := controllers.NewUserController(db, dbLogger, OtpService, EmailService)
 	jobController := controllers.NewJobController(db, dbLogger)
+
+	// Worker Server
+	go workers.StartWorkerServer(movieServices, jobServices, redisOpt)
 
 	// Initialize middleware with dependencies
 	authMiddleware := middleware.AuthMiddleware(dbLogger)
@@ -36,6 +50,10 @@ func SetupRoutes(
 	api.POST("/login", ipLimiter.IPMiddleware(), userController.LoginUser)
 	api.POST("/logout", ipLimiter.IPMiddleware(), userController.LogoutHandler)
 	api.GET("/refresh", ipLimiter.IPMiddleware(), userController.RefreshTokenHandler)
+	api.POST("/verify-email", ipLimiter.IPMiddleware(), userController.VerifyEmail)
+	api.POST("/resend-verification", ipLimiter.IPMiddleware(), userController.ResendVerification)
+	api.POST("/forgot-password", ipLimiter.IPMiddleware(), userController.ForgotPassword)
+	api.POST("/reset-password", ipLimiter.IPMiddleware(), userController.ResetPassword)
 
 	api.GET("/movies", ipLimiter.IPMiddleware(), movieController.GetMovies)
 	api.GET("/genres", ipLimiter.IPMiddleware(), movieController.GetGenres)

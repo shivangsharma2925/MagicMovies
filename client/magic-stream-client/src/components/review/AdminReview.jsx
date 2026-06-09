@@ -53,7 +53,6 @@ const Review = () => {
             console.error(err);
             if (err.response && err.response.status === 401) {
                 console.error('Unauthorized access - redirecting to login');
-                localStorage.removeItem('user');
                 setAuth(null);
             } else {
                 console.error('Error updating review:', err);
