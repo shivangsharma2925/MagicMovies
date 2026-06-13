@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect } from "react";
-import useAuth from "./useAuth";
+import UseAuth from "./UseAuth";
 
 const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -15,7 +15,7 @@ let isRefreshing = false;
 let failedQueue = [];
 
 const useAxiosPrivate = () => {
-  const { setAuth } = useAuth();
+  const { setAuth } = UseAuth();
 
   //useMemo and useRef are private to components, they are created per component but we want one global, so moving outside.
   // const isRefreshing = useRef(false);
