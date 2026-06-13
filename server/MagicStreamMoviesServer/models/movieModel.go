@@ -85,6 +85,7 @@ const (
 type Job struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	ImdbID    string             `bson:"imdb_id" json:"imdb_id"`
+	Title     string             `bson:"title" json:"title"`
 	Status    JobStatus          `bson:"status" json:"status"`
 	Attempts  int                `bson:"attempts" json:"attempts"`
 	Error     string             `bson:"error,omitempty" json:"error,omitempty"`

@@ -47,15 +47,16 @@ const Recommended = () => {
 
   return (
     <>
-      <Form className="mb-3">
-        <Form.Control
-          type="text"
-          placeholder="Search in Recommended movies..."
-          value={search}
-          className="w-50 m-auto mt-2"
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </Form>
+      <div className="recommended-search-wrap">
+        <span className="search-field-icon" aria-hidden="true">&#128269;</span>
+          <Form.Control
+            type="text"
+            placeholder="Search in Recommended movies..."
+            value={search}
+            className="search-field"
+            onChange={(e) => setSearch(e.target.value)}
+          />
+      </div>
 
       {loading ? (
         <h2><Spinner /></h2>

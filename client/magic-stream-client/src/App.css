@@ -6,59 +6,1220 @@
 }
 
 .suggestion-item:not(:last-child) {
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.suggestionsList{
+.suggestionsList {
   border-radius: 18px;
   max-height: 45vh;
   overflow-y: auto !important;
-  background: rgba(255,255,255,0.95);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 .suggestionsList {
-  scrollbar-width: none;  /* Firefox */ 
+  scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge  */
 }
 
 .suggestionsList::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */ 
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* Suggestion CSS end */
+
+/* =================================================================
+================================================================= */
 
 /* new-movie button CSS start */
 
 .new-movies-banner {
   position: fixed;
-  top: 80px;
+  top: 19%;
   left: 50%;
   transform: translateX(-50%) translateY(-100px);
-
   z-index: 2000;
-
   animation: slideDown 0.4s ease forwards;
 }
 
-.new-movies-banner button {
-  border: none;
-  padding: 10px 18px;
+.new-movies-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(11, 11, 20, 0.92);
+  border: 1px solid rgba(0, 212, 255, 0.3);
   border-radius: 999px;
-
-  background: #0d6efd;
-  color: white;
-
-  font-weight: 500;
-
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 9px 22px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  animation: dropIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 
-@keyframes slideDown {
-  to {
-    transform: translateX(-50%) translateY(0);
+.new-movies-btn:hover {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 212, 255, 0.55);
+}
+
+/* Ripple ring around the button */
+.new-movies-btn::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 999px;
+  border: 20px solid rgba(0, 212, 255, 0.2);
+  animation: ripple 2s ease-out infinite;
+  pointer-events: none;
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #00d4ff;
+  flex-shrink: 0;
+  animation: blink 1.6s ease-in-out infinite;
+}
+
+@keyframes dropIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Blinking dot */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+}
+
+/* Expanding ripple ring */
+@keyframes ripple {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
   }
 }
 
 /* new-movie button CSS end */
+
+/* =================================================================
+================================================================= */
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Navbar related CSS start */
+
+.movie-navbar {
+  background: linear-gradient(
+    90deg,
+    rgba(11, 11, 15, 0.96) 0%,
+    rgba(18, 18, 30, 0.96) 50%,
+    rgba(11, 11, 15, 0.96) 100%
+  );
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.brand-text {
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+.brand-glow {
+  text-shadow: 0 0 10px rgba(255, 0, 80, 0.4);
+}
+
+.nav-item-custom {
+  color: rgba(255, 255, 255, 0.75) !important;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  font-weight: 500;
+}
+
+.nav-item-custom.active {
+  color: #ffffff !important;
+}
+
+.nav-item-custom.active::after {
+  width: 80%;
+}
+
+.nav-item-custom:hover {
+  color: #ff2e63 !important;
+  transform: translateY(-1px);
+}
+
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 5px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+}
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff2e63, #7928ca);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.user-name-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.navbar-toggler-custom {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.navbar-toggler-custom:focus {
+  box-shadow: 0 0 0 2px rgba(255, 46, 99, 0.4) !important;
+}
+
+/* Recolour Bootstrap's default hamburger icon */
+.navbar-toggler-custom .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255%2C255%2C255%2C0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+.nav-item-custom::after {
+  content: "";
+  position: absolute;
+  left: 10%;
+  bottom: 0;
+  width: 0%;
+  height: 2px;
+  background: #ff2e63;
+  transition: 0.3s;
+}
+
+.nav-item-custom:hover::after {
+  width: 80%;
+}
+
+.btn-login {
+  background: transparent;
+  border: 1px solid #00d4ff;
+  color: #00d4ff;
+  transition: 0.2s;
+}
+
+.btn-login:hover {
+  background: #00d4ff;
+  color: #000;
+  box-shadow: 0 0 12px #00d4ff;
+}
+
+.btn-register {
+  background: #ff2e63;
+  border: none;
+  color: white;
+  transition: 0.2s;
+}
+
+.btn-register:hover {
+  background: #ff1b55;
+  box-shadow: 0 0 12px #ff2e63;
+}
+
+.btn-logout {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-logout:hover {
+  background: #ff2e63;
+  border-color: #ff2e63;
+}
+
+/* ── Mobile collapse panel ── */
+@media (max-width: 991px) {
+  .navbar-collapse {
+    margin: 0 -12px;
+  }
+
+  /* Nav links section */
+  .nav-item-custom {
+    border-radius: 8px;
+    padding: 5px 14px !important;
+    display: inline;
+    width: fit-content;
+  }
+  .nav-item-custom::after {
+    display: none;
+  }
+
+  /* User chip + logout row — put them side by side at the bottom */
+  .navbar-nav.ms-auto {
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: end;
+    padding: 8px 6px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    margin-top: 4px;
+  }
+
+  /* Login/Register row */
+  .navbar-nav.ms-auto .btn-login,
+  .navbar-nav.ms-auto .btn-register {
+    flex: 1;
+  }
+
+  /* Keep buttons from stacking weirdly */
+  .navbar-nav.ms-auto > * {
+    margin: 0 !important;
+  }
+}
+
+/* Navbar related CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* Home related CSS start */
+
+.home-sticky-bar {
+  background: linear-gradient(
+    180deg,
+    rgba(11, 11, 15, 0.98) 0%,
+    rgba(11, 11, 20, 0.92) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.btn-add-movie {
+  background: #100f0f !important;
+  border: 1px solid rgb(93, 88, 88) !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  font-weight: 600;
+  padding: 7px 18px !important;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+  white-space: nowrap;
+}
+
+.btn-add-movie:hover {
+  background: #26262d !important;
+  box-shadow: 0 0 14px rgba(246, 21, 77, 0.4) !important;
+  border: 1px solid rgb(200, 196, 196) !important;
+}
+
+/* Home related CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* search bar related CSS start */
+
+.search-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-field-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 15px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-field {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  padding: 9px 18px 9px 40px !important;
+  color: #fff !important;
+  font-size: 15px;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.search-field::placeholder {
+  color: rgba(255, 255, 255, 0.35) !important;
+}
+
+.search-field:focus {
+  border-color: rgba(0, 212, 255, 0.45) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 0 0 3px rgba(4, 209, 250, 0.362) !important;
+  outline: none;
+}
+
+/* search bar related CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* Movies grid related CSS start */
+
+.movie-card-dark {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  transition:
+    transform 0.22s,
+    border-color 0.22s,
+    box-shadow 0.22s;
+  display: flex;
+  flex-direction: column;
+}
+
+.movie-card-dark:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 46, 99, 0.4);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.movie-poster {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+  background: #0d0d15;
+}
+
+.movie-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.35s;
+  display: block;
+}
+
+.movie-card-dark:hover .movie-poster-img {
+  transform: scale(1.05);
+}
+
+.movie-poster-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0) 55%
+  );
+  opacity: 0;
+  transition: opacity 0.25s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.movie-card-dark:hover .movie-poster-overlay {
+  opacity: 1;
+}
+
+.movie-play-btn {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 46, 99, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #fff;
+  transform: scale(0.8);
+  transition: transform 0.2s;
+}
+
+.movie-card-dark:hover .movie-play-btn {
+  transform: scale(1);
+}
+
+.movie-rank-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 46, 99, 0.45);
+  color: #ff2e63;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.movie-info {
+  padding: 12px 14px 6px;
+  flex: 1;
+}
+
+.movie-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0 0 4px;
+}
+
+.movie-imdb {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.movie-actions {
+  padding: 8px 14px 14px;
+}
+
+.btn-movie-review {
+  width: 100%;
+  padding: 7px;
+  background: transparent;
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  color: #00d4ff;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.btn-movie-review:hover {
+  background: rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+/* ── Responsive poster height ── */
+@media (max-width: 576px) {
+  .movie-poster {
+    height: 200px;
+  }
+}
+
+/* Movies grid related CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* recommended movie CSS start */
+
+.recommended-search-wrap {
+  position: relative;
+  width: 50%;
+  margin: 16px auto 24px;
+}
+
+@media (max-width: 768px) {
+  .recommended-search-wrap {
+    width: 90%;
+  }
+}
+
+/* recommended movie CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* Admin review CSS start */
+
+.review-page-title {
+  text-align: center;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 28px;
+  letter-spacing: 0.3px;
+}
+
+.review-panel {
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 20px;
+  height: 85% !important;
+}
+
+.review-panel-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 16px !important;
+}
+
+.review-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55) !important;
+  margin-bottom: 8px;
+}
+
+.review-textarea {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 10px !important;
+  color: #fff !important;
+  font-size: 14px;
+  line-height: 1.6;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.review-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.review-textarea:focus {
+  border-color: rgba(0, 212, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.07) !important;
+}
+
+.btn-submit-review {
+  padding: 9px 24px;
+  background: #ff2e63 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.btn-submit-review:hover {
+  background: #ff1b55 !important;
+  box-shadow: 0 0 14px rgba(255, 46, 99, 0.35) !important;
+}
+
+.review-display-box {
+  background: rgba(0, 212, 255, 0.05);
+  border: 1px solid rgba(0, 212, 255, 0.15);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.review-display-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #00d4ff;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  margin-bottom: 10px !important;
+}
+
+.review-display-text {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0 !important;
+}
+
+.review-movie-poster {
+  position: relative;
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  height: 340px;
+}
+
+.review-movie-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.review-movie-meta {
+  margin-top: 14px;
+}
+
+.review-movie-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px !important;
+}
+
+.review-movie-imdb {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* Admin review CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* Login CSS start */
+
+.login-container {
+  background: transparent;
+  min-height: 90vh;
+}
+
+.login-card {
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-title {
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  margin-bottom: 6px !important;
+}
+
+.login-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0 !important;
+}
+
+.login-alert {
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.login-alert-error {
+  background: rgba(255, 46, 99, 0.1);
+  border: 1px solid rgba(255, 46, 99, 0.25);
+  color: #ff6b8a;
+}
+
+.login-alert-success {
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  color: #00d4ff;
+}
+
+.login-field label {
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+
+.login-input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 9px !important;
+  color: #fff !important;
+  font-size: 14px;
+  padding: 10px 14px !important;
+}
+
+.login-input::placeholder {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.login-input:focus {
+  border-color: rgba(0, 212, 255, 0.4) !important;
+  background: rgba(255, 255, 255, 0.07) !important;
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.07) !important;
+}
+
+.login-forgot {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35) !important;
+  text-decoration: none !important;
+  transition: color 0.2s;
+  cursor: pointer;
+}
+
+.login-forgot:hover {
+  color: #00d4ff !important;
+}
+
+.login-forgot-active {
+  color: #00d4ff !important;
+  font-weight: 600 !important;
+  animation: pulse 1.2s infinite;
+}
+
+.login-btn {
+  background: #2eff7670 !important;
+  border: none !important;
+  border-radius: 9px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px;
+  padding: 11px !important;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s !important;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #1bff61a1 !important;
+  box-shadow: 0 0 16px rgb(57 255 46 / 40%) !important;
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.login-divider hr {
+  flex: 1;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin: 0;
+  opacity: 1;
+}
+
+.login-divider span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.login-register-row {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.login-register-row a {
+  color: #00d4ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-register-row p {
+  color: #00d4ff;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.login-register-row a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 480px) {
+  .login-card {
+    padding: 28px 20px;
+    border-radius: 12px;
+  }
+}
+
+/* Login CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* Register CSS start */
+
+.genre-select {
+  height: 110px !important; /* show ~4 options */
+  padding: 6px 10px !important;
+  border-radius: 9px !important;
+}
+
+.genre-select option {
+  background: #1a1a28;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.genre-select option:checked {
+  background: rgba(255, 46, 99, 0.25);
+  color: #fff;
+}
+
+.admin-option {
+  background: #1a1a28;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.admin-option:checked {
+  background: rgba(53, 200, 78, 0.5);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.genre-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3) !important;
+  margin-top: 5px;
+  display: block;
+}
+
+@media (max-width: 520px) {
+  .login-card {
+    padding: 24px 16px;
+  }
+  .row.g-3 .col-6 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+}
+
+/* Register CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* Add Movies CSS start */
+
+.queue-page-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 20px !important;
+}
+
+.add-movie-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.add-movie-input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.add-movie-input::placeholder {
+  color: rgba(235, 221, 221, 0.662);
+}
+
+.add-movie-input:focus {
+  border-color: rgba(0, 212, 255, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.btn-add-queue {
+  padding: 10px 20px;
+  background: #ff2e63;
+  border: none;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.btn-add-queue:hover:not(:disabled) {
+  background: #ff1b55;
+  box-shadow: 0 0 14px rgba(255, 46, 99, 0.35);
+}
+
+.btn-add-queue:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.queue-message {
+  font-size: 13px;
+  color: #00d4ff;
+  margin-top: 8px !important;
+}
+
+.queue-table-wrap {
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.queue-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.queue-table thead tr {
+  background: rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.queue-table th {
+  padding: 11px 16px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  text-align: left;
+}
+
+.queue-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.queue-row:last-child td {
+  border-bottom: none;
+}
+.queue-row:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.queue-error-text {
+  color: rgba(255, 100, 100, 0.75);
+  font-size: 12px;
+}
+
+.queue-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.queue-badge-done {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+}
+.queue-badge-failed {
+  background: rgba(255, 46, 99, 0.12);
+  color: #ff6b8a;
+  border: 1px solid rgba(255, 46, 99, 0.25);
+}
+.queue-badge-processing {
+  background: rgba(250, 204, 21, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(250, 204, 21, 0.25);
+}
+.queue-badge-queued {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.btn-retry-job {
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+  color: #fbbf24;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-retry-job:hover:not(:disabled) {
+  background: rgba(250, 204, 21, 0.1);
+}
+.btn-retry-job:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.queue-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.queue-page-info {
+  font-size: 13px;
+  color: rgb(255, 255, 255);
+}
+
+.queue-page-btns {
+  display: flex;
+  gap: 4px;
+}
+
+.queue-page-btn {
+  padding: 5px 10px;
+  min-width: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgb(255, 255, 255);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.queue-page-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #2bff00;
+}
+
+.queue-page-btn.active {
+  background: rgba(46, 255, 67, 0.2);
+  border-color: rgba(77, 255, 46, 0.4);
+  color: #2eff38;
+  font-weight: 600;
+}
+
+.queue-page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.queue-empty {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+}
+
+@media (max-width: 576px) {
+  .add-movie-form {
+    flex-direction: column;
+  }
+  .queue-table th:nth-child(3),
+  .queue-table td:nth-child(3),
+  .queue-table th:nth-child(4),
+  .queue-table td:nth-child(4) {
+    display: none;
+  } /* hide Attempts + Error on mobile */
+}
+
+/* Add Movies CSS end */
+
+/* =================================================================
+================================================================= */
+
+/* Verify Email CSS start */
+
+.otp-inputs {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 8px 0;
+}
+
+.otp-box {
+  width: 48px;
+  height: 52px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    box-shadow 0.2s;
+  caret-color: #00d4ff;
+}
+
+.otp-box:focus {
+  border-color: rgba(0, 212, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.08);
+}
+
+.otp-box-filled {
+  border-color: rgb(132 255 46 / 50%);
+  background: rgb(67 255 46 / 15%);
+  color: #fff;
+}
+
+@media (max-width: 400px) {
+  .otp-box {
+    width: 40px;
+    height: 44px;
+    font-size: 18px;
+  }
+}
+
+/* Verify Email CSS start */

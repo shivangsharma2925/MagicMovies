@@ -30,19 +30,13 @@ const SearchBar = ({
   return (
     <div
       ref={searchRef}
-      className="position-relative"
-      style={{
-        width: "100%",
-      }}
+      className="search-input-wrapper"
     >
+      <span className="search-field-icon" aria-hidden="true">&#128269;</span>
       <Form.Control
-        className="shadow-sm border-0 bg-light py-2 px-4"
+        className="search-field"
         type="text"
         placeholder="Search movies..."
-        style={{
-          borderRadius: "999px",
-          fontSize: "1.05rem",
-        }}
         value={search}
         onFocus={() => {
           if (suggestions.length > 0) {

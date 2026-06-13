@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	// "os"
 	"time"
@@ -24,18 +25,16 @@ import (
 // var adminPassword = os.Getenv("ADMIN_PASSWORD")
 
 type UserController struct {
-	db           *database.MongoDB
-	dbLogger     *dblogger.DBLogger
-	otpService   *services.OTPService
-	emailService *services.EmailService
+	db         *database.MongoDB
+	dbLogger   *dblogger.DBLogger
+	otpService *services.OTPService
 }
 
-func NewUserController(db *database.MongoDB, dbLogger *dblogger.DBLogger, otpService *services.OTPService, emailService *services.EmailService) *UserController {
+func NewUserController(db *database.MongoDB, dbLogger *dblogger.DBLogger, otpService *services.OTPService) *UserController {
 	return &UserController{
-		db:           db,
-		dbLogger:     dbLogger,
-		otpService:   otpService,
-		emailService: emailService,
+		db:         db,
+		dbLogger:   dbLogger,
+		otpService: otpService,
 	}
 }
 
@@ -84,11 +83,25 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 		return
 	}
 
+	adminDowngraded := false
+	if user.Role == "ADMIN" {
+		if user.AdminPassword != os.Getenv("ADMIN_PASSWORD") {
+			user.Role = "USER"
+			adminDowngraded = true
+		}
+	}
+
 	user.UserID = primitive.NewObjectID().Hex()
 	user.Password = hashedPassword
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
 	user.IsVerified = false
+	if len(user.FirstName) > 0 {
+		user.FirstName = strings.ToUpper(user.FirstName[:1]) + user.FirstName[1:]
+	}
+	if len(user.LastName) > 0 {
+		user.LastName = strings.ToUpper(user.LastName[:1]) + user.LastName[1:]
+	}
 
 	_, err = usercollection.InsertOne(ctx, user)
 	if err != nil {
@@ -119,7 +132,9 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 	}
 
 	if sendEmail {
-		err = uc.otpService.SaveVerificationOTP(ctx, user.UserID, otp)
+		ctxOtp, cancelOTP := context.WithTimeout(c, 20*time.Second)
+		defer cancelOTP()
+		err = uc.otpService.SaveVerificationOTP(ctxOtp, user.UserID, otp)
 
 		if err != nil {
 			uc.dbLogger.Alerts("ERROR", "Error in saving OTP", gin.H{
@@ -131,7 +146,7 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 		}
 
 		if sendEmail {
-			err = uc.emailService.SendVerificationOTP(user.Email, otp)
+			err = services.SendVerificationOTP(user.Email, otp)
 			if err != nil {
 				uc.dbLogger.Alerts("ERROR", "Error sending email", gin.H{
 					"endpoint":   "/RegisterUser",
@@ -139,15 +154,28 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 					"error":      err.Error(),
 				})
 				sendEmail = false
+			}else {
+				uc.otpService.SetResendCooldown(ctxOtp, user.UserID)
 			}
-			uc.otpService.SetResendCooldown(ctx, user.UserID)
 		}
 	}
 
+	verificationMessage := "Account created successfully. Redirecting to Verify Email..."
+	if !sendEmail {
+		verificationMessage = "Account created successfully, but verification email could not be sent."
+	}
+
+	if adminDowngraded {
+		c.JSON(http.StatusCreated, gin.H{
+			"message": fmt.Sprintf("%s Admin access revoked since Admin Password was incorrect.", verificationMessage),
+			"user_id": user.UserID,
+		})
+		return
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message":           "User created successfully",
-		"verification_sent": sendEmail,
-		"user_id":           user.UserID,
+		"message": verificationMessage,
+		"user_id": user.UserID,
 	})
 }
 
@@ -472,7 +500,7 @@ func (uc *UserController) ResendVerification(c *gin.Context) {
 		}
 
 		if sendEmail {
-			err = uc.emailService.SendVerificationOTP(user.Email, otp)
+			err = services.SendVerificationOTP(user.Email, otp)
 			if err != nil {
 				uc.dbLogger.Alerts("ERROR", "Error sending email", gin.H{
 					"endpoint":   "/ResendVerification",
@@ -536,7 +564,7 @@ func (uc *UserController) ForgotPassword(c *gin.Context) {
 	resetPasswordToken := uuid.NewString()
 
 	err = uc.otpService.SaveResetPasswordToken(ctx, user.UserID, resetPasswordToken)
-	
+
 	if err != nil {
 		uc.dbLogger.Alerts("ERROR", "Error in storing reset password key in redis", gin.H{
 			"error":      err.Error(),
@@ -552,7 +580,7 @@ func (uc *UserController) ForgotPassword(c *gin.Context) {
 	// http://localhost:3000/reset-password?uniqueKey=abcdefg
 	link := fmt.Sprintf("%s/reset-password?uniqueKey=%s", os.Getenv("FRONTEND_URL"), resetPasswordToken)
 
-	err = uc.emailService.SendPasswordResetOTP(req.EmailId, link)
+	err = services.SendPasswordResetOTP(req.EmailId, link)
 	if err != nil {
 		uc.dbLogger.Alerts("ERROR", "Error in sending password reset link", gin.H{
 			"error":      err.Error(),

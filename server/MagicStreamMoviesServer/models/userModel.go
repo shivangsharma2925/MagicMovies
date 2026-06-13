@@ -15,6 +15,7 @@ type User struct {
 	Email           string             `bson:"email" json:"email" validate:"required,email"`
 	IsVerified      bool               `bson:"is_verified" json:"is_verified"`
 	Role            string             `bson:"role" json:"role" validate:"oneof=ADMIN USER"`
+	AdminPassword   string             `bson:"-" json:"adminPassword"`
 	Password        string             `bson:"password" json:"password" validate:"required,min=6"`
 	CreatedAt       time.Time          `bson:"created_at" json:"created_at"`
 	UpdatedAt       time.Time          `bson:"updated_at" json:"updated_at"`

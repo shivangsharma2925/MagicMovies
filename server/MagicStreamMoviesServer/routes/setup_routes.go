@@ -22,13 +22,12 @@ func SetupRoutes(
 ) {
 	// Initialize services with dependencies
 	OtpService := services.NewOTPService(redisClient)
-	EmailService := services.NewEmailService()
 	movieServices := services.NewMovieService(db, dbLogger)
 	jobServices := services.NewJobService(db)
 
 	// Initialize controllers with dependencies
 	movieController := controllers.NewMovieController(db, dbLogger)
-	userController := controllers.NewUserController(db, dbLogger, OtpService, EmailService)
+	userController := controllers.NewUserController(db, dbLogger, OtpService)
 	jobController := controllers.NewJobController(db, dbLogger)
 
 	// Worker Server

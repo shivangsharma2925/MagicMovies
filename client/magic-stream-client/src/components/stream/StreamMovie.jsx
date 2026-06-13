@@ -22,7 +22,7 @@ const StreamMovie = () => {
           width="100%"
           height="100%"
         />
-      ) : <h2 className="m-auto">Trailer not available.</h2>}
+      ) : <h2 className="m-auto text-white text-center">Trailer not available.</h2>}
     </div>
   );
 };

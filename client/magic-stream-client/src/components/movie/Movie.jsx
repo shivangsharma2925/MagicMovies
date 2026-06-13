@@ -12,44 +12,42 @@ const Movie = ({ movie }) => {
   };
 
   return (
-    <div className="col-md-4 mb-4" id={movie._id}>
-      <div className="card h-100 shadow-sm movie-card">
+    <div className="col-6 col-md-4 col-lg-3 mb-4" id={movie._id}>
+      <div className="movie-card-dark h-100">
         <Link
           to={`/stream/${movie.youtube_id?movie.youtube_id:null}`}
           style={{ textDecoration: "none", color: "inherit" }}
         >
-          <div style={{ position: "relative" }}>
+          <div className="movie-poster">
             <img
               src={movie.poster_path}
               alt={movie.title}
-              className="card-img-top"
-              style={{
-                objectFit: "contain",
-                height: "250px",
-                width: "100%",
-              }}
+              className="movie-poster-img"
             />
-            <span className="play-icon-overlay">
-              <FontAwesomeIcon icon={faCirclePlay} />
-            </span>
+            <div className="movie-poster-overlay">
+              <div className="movie-play-btn">
+                <FontAwesomeIcon icon={faCirclePlay} />
+              </div>
+            </div>
+            {movie.ranking?.ranking_name && (
+              <span className="movie-rank-badge">
+                {movie.ranking.ranking_name}
+              </span>
+            )}
           </div>
         </Link>
-        <div className="card-body d-flex flex-column">
-          <h5 className="card-title">{movie.title}</h5>
-          <p className="card-text mb-2">{movie.imdb_id}</p>
+        <div className="movie-info">
+          <h6 className="movie-title">{movie.title}</h6>
+          <span className="movie-imdb">{movie.imdb_id}</span>
         </div>
-        {movie.ranking?.ranking_name && (
-          <span className="badge bg-dark m-3 p-2" style={{ fontSize: "1rem" }}>
-            {movie.ranking.ranking_name}
-          </span>
-        )}
-        <Button
-          variant="outline-info"
-          onClick={() => updateMovieReview(movie.imdb_id)}
-          className="m-3"
-        >
-          Review
-        </Button>
+        <div className="movie-actions">
+          <button
+            className="btn-movie-review"
+            onClick={() => updateMovieReview(movie.imdb_id)}
+          >
+            Review
+          </button>
+        </div>
       </div>
     </div>
   );

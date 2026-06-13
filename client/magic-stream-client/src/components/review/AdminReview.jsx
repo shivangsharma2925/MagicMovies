@@ -1,113 +1,134 @@
-import {Form, Button} from 'react-bootstrap';
-import { useRef,useEffect,useState } from 'react';
-import {useParams} from 'react-router-dom';
+import { Form, Button } from "react-bootstrap";
+import { useRef, useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 //import axiosPrivate from '../../api/axiosPrivateConfig';
-import useAxiosPrivate from '../../hook/UseAxiosPrivate';
-import UseAuth from '../../hook/UseAuth';
-import Movie from '../movie/Movie';
-import Spinner from '../../utils/Spinner';
+import useAxiosPrivate from "../../hook/UseAxiosPrivate";
+import UseAuth from "../../hook/UseAuth";
+import Movie from "../movie/Movie";
+import Spinner from "../../utils/Spinner";
 
 const Review = () => {
+  const [movie, setMovie] = useState({});
+  const [loading, setLoading] = useState(false);
+  const revText = useRef();
+  const { imdb_id } = useParams();
+  const { auth, setAuth } = UseAuth();
+  const axiosPrivate = useAxiosPrivate();
 
-    const [movie, setMovie] = useState({});
-    const [loading, setLoading] = useState(false);
-    const revText = useRef();
-    const { imdb_id } = useParams();
-    const {auth, setAuth} = UseAuth();
-    const axiosPrivate = useAxiosPrivate();
+  useEffect(() => {
+    const fetchMovie = async () => {
+      setLoading(true);
+      try {
+        const response = await axiosPrivate.get(`/movie/${imdb_id}`);
+        setMovie(response.data);
+      } catch (error) {
+        console.error("Error fetching movie:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    useEffect(() => {
-        const fetchMovie = async () => {
-            setLoading(true);
-            try {
-                const response = await axiosPrivate.get(`/movie/${imdb_id}`);
-                setMovie(response.data);
-            } catch (error) {
-                console.error('Error fetching movie:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    fetchMovie();
+  }, [axiosPrivate, imdb_id]);
 
-        fetchMovie();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    }, [axiosPrivate, imdb_id]);
+    setLoading(true);
+    try {
+      const response = await axiosPrivate.post(`/updatereview/${imdb_id}`, {
+        admin_review: revText.current.value,
+      });
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        setLoading(true);
-        try {
-            
-            const response = await axiosPrivate.post(`/updatereview/${imdb_id}`, { admin_review: revText.current.value });          
+      setMovie(() => ({
+        ...movie,
+        admin_review: response.data?.admin_review || movie.admin_review,
+        ranking: {
+          ranking_name:
+            response.data?.ranking_name || movie.ranking?.ranking_name,
+        },
+      }));
+    } catch (err) {
+      console.error(err);
+      if (err.response && err.response.status === 401) {
+        console.error("Unauthorized access - redirecting to login");
+        setAuth(null);
+      } else {
+        console.error("Error updating review:", err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            setMovie(() => ({
-                ...movie,
-                admin_review: response.data?.admin_review || movie.admin_review,
-                ranking: {
-                    ranking_name: response.data?.ranking_name || movie.ranking?.ranking_name
-                }
-            }));
-
-        } catch (err) {
-            console.error(err);
-            if (err.response && err.response.status === 401) {
-                console.error('Unauthorized access - redirecting to login');
-                setAuth(null);
-            } else {
-                console.error('Error updating review:', err);
-            }
-
-        } finally {
-            setLoading(false);
-        }
-    }; 
-
-    return (
-      <>
-        {loading ? (
-            <Spinner />
-        ) : (
-            <div className="container py-5">
-                <h2 className="text-center mb-4">Admin Review</h2>
-                <div className="row justify-content-center">
-                    <div className="col-12 col-md-6 d-flex align-items-center justify-content-center mb-4 mb-md-0">
-                        <div className="w-100 shadow rounded p-3 bg-white d-flex justify-content-center align-items-center">
-                            <Movie movie={movie} />
-                        </div>
-                    </div>
-                    <div className="col-12 col-md-6 d-flex align-items-stretch">
-                        <div className="w-100 shadow rounded p-4 bg-light">
-                            {auth && auth.role === "ADMIN" ? (
-                                <Form onSubmit={handleSubmit}>
-                                    <Form.Group className="mb-3" controlId="adminReviewTextarea">
-                                        <Form.Label>Admin Review</Form.Label>
-                                        <Form.Control
-                                            ref={revText}
-                                            required
-                                            as="textarea"
-                                            rows={8}
-                                            defaultValue={movie?.admin_review}
-                                            placeholder="Write your review here..."
-                                            style={{ resize: "vertical" }}
-                                        />
-                                    </Form.Group>
-                                    <div className="d-flex justify-content-end">
-                                        <Button variant="info" type="submit">
-                                            Submit Review
-                                        </Button>
-                                    </div>
-                                </Form> ):(
-                                <div className="alert alert-info">{movie.admin_review}</div>
-                            )}                           
-                        </div>
-                    </div>
-                </div>
+  return (
+    <>
+      <div className="container py-5">
+        <h2 className="review-page-title">Admin Review</h2>
+        <div className="row justify-content-center g-4">
+          {/* left - movie card */}
+          <div className="col-12 col-md-6">
+            {/* <div className="review-panel h-100">
+                <Movie movie={movie} />
+              </div> */}
+            <div className="review-movie-poster">
+              <img src={movie.poster_path} alt={movie.title} />
+              {movie.ranking?.ranking_name && (
+                <span className="movie-rank-badge">
+                  {movie.ranking.ranking_name}
+                </span>
+              )}
             </div>
-        )}
-    </>      
 
-    );
-}
+            <div className="review-movie-meta">
+              <h5 className="review-movie-title">{movie.title}</h5>
+              <span className="review-movie-imdb">{movie.imdb_id}</span>
+            </div>
+          </div>
+
+          {/* right - review card */}
+          <div className="col-12 col-md-6">
+            <div className="review-panel">
+              {auth?.role === "ADMIN" ? (
+                <Form onSubmit={handleSubmit}>
+                  <p className="review-panel-title">Write Review</p>
+                  <Form.Group className="mb-3" controlId="adminReviewTextarea">
+                    <Form.Label className="review-form-label">
+                      Admin Review
+                    </Form.Label>
+                    <Form.Control
+                      ref={revText}
+                      required
+                      as="textarea"
+                      rows={7}
+                      disabled={loading}
+                      defaultValue={movie?.admin_review}
+                      placeholder="Write your review here..."
+                      className="review-textarea"
+                      style={{ resize: "vertical" }}
+                    />
+                  </Form.Group>
+                  <div className="d-flex justify-content-end">
+                    <Button className="btn-submit-review" type="submit" disabled={loading}>
+                      {!loading ? "Submit Review" : "Submitting..."}
+                    </Button>
+                  </div>
+                </Form>
+              ) : (
+                <div>
+                  <p className="review-panel-title">Review</p>
+                  <div className="review-display-box">
+                    <p className="review-display-label">Admin Review</p>
+                    <p className="review-display-text">{movie.admin_review}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 export default Review;

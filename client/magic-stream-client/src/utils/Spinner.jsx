@@ -9,7 +9,7 @@ const Spinner = () => {
             minHeight: '60vh'
           }}>
             <span
-              className="spinner-border"
+              className="spinner-border text-white"
               role="status"
               aria-hidden="true"
               style={{ width: '5rem', height: '5rem', fontSize: '2rem' }}

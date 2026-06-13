@@ -1,58 +1,52 @@
 package services
 
 import (
+	"fmt"
+	"net/smtp"
 	"os"
-
-	"github.com/resend/resend-go/v2"
 )
 
-type EmailService struct {
-	client *resend.Client
-	from   string
+func SendVerificationOTP(email string, otp string) error {
+
+	auth := smtp.PlainAuth(
+		"",
+		os.Getenv("SMTP_USER"),
+		os.Getenv("SMTP_PASS"),
+		os.Getenv("SMTP_HOST"),
+	)
+
+	mime := "MIME-version: 1.0;\r\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n"
+
+	subject := "Subject: Verify your email\n"
+
+	body := fmt.Sprintf("<h2>Email Verification</h2>\n<p>Your verification code is:</p>\n<h1>%s</h1>\n<p>This code <b>expires in 10 minutes</b>.</p>\n<p>If this action is not taken by you, Ignore this email.</p>", otp)
+
+	message := []byte(subject + mime + body)
+
+	addr := fmt.Sprintf("%s:%s", os.Getenv("SMTP_HOST"), os.Getenv("SMTP_PORT"))
+
+	return smtp.SendMail(addr, auth, os.Getenv("SMTP_USER"), []string{email}, message)
+
 }
 
-func NewEmailService() *EmailService {
+func SendPasswordResetOTP(email string, link string) error {
 
-	return &EmailService{
-		client: resend.NewClient(os.Getenv("RESEND_API_KEY")),
-		from:   os.Getenv("EMAIL_FROM"),
-	}
-}
+	auth := smtp.PlainAuth(
+		"",
+		os.Getenv("SMTP_USER"),
+		os.Getenv("SMTP_PASS"),
+		os.Getenv("SMTP_HOST"),
+	)
 
-func (e *EmailService) SendVerificationOTP(email string, otp string,) error {
+	mime := "MIME-version: 1.0;\r\nContent-Type: text/html; charset=\"UTF-8\";\r\n\r\n"
 
-	params := &resend.SendEmailRequest{
-		From:    e.from,
-		To:      []string{email},
-		Subject: "Verify your email",
-		Html: `
-			<h2>Email Verification</h2>
-			<p>Your verification code is:</p>
-			<h1>` + otp + `</h1>
-			<p>This code expires in 10 minutes.</p>
-		`,
-	}
+	subject := "Subject: Password Reset\n"
 
-	_, err := e.client.Emails.Send(params)
+	body := fmt.Sprintf("<h2>Password Reset Request</h2>\n<p>Your reset link is:</p>\n<h4>%s</h4>\n<p>This link <b>expires in 15 minutes</b>.</p>\n<p>If this action is not taken by you, Ignore this email.</p>", link)
 
-	return err
-}
+	message := []byte(subject + mime + body)
 
-func (e *EmailService) SendPasswordResetOTP(email string, link string,) error {
+	addr := fmt.Sprintf("%s:%s", os.Getenv("SMTP_HOST"), os.Getenv("SMTP_PORT"))
 
-	params := &resend.SendEmailRequest{
-		From:    e.from,
-		To:      []string{email},
-		Subject: "Password Reset",
-		Html: `
-			<h2>Password Reset Request</h2>
-			<p>Your reset link is:</p>
-			<h4>` + link + `</h4>
-			<p>This link expires in 15 minutes.</p>
-		`,
-	}
-
-	_, err := e.client.Emails.Send(params)
-
-	return err
+	return smtp.SendMail(addr, auth, os.Getenv("SMTP_USER"), []string{email}, message)
 }

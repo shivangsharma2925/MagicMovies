@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import Movies from "../movies/Movies";
-import { Button, Form } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import Spinner from "../../utils/Spinner";
 import { useNavigate } from "react-router-dom";
 import {
@@ -98,7 +98,7 @@ const Home = () => {
 
     const handler = (event) => {
       const data = JSON.parse(event.data);
-      // console.log(data);
+      
       if (data.type === "new_movie") {
         setHasNewMovies(true);
       }
@@ -123,11 +123,18 @@ const Home = () => {
     message = "Error fetching movies";
   }
 
+  if(hasNewMovies){
+    setTimeout(() => {
+      setHasNewMovies(false);
+    }, 5000);
+  }
+
   return (
     <>
       {hasNewMovies && (
         <div className="new-movies-banner">
           <button
+            className="new-movies-btn"
             onClick={() => {
               queryClient.invalidateQueries({
                 queryKey: ["movies"],
@@ -136,22 +143,16 @@ const Home = () => {
               setHasNewMovies(false);
             }}
           >
+            <span className="pulse-dot" />
             New movies available
           </button>
         </div>
       )}
-
       <div
-        className="sticky-top pt-3 pb-4"
-        style={{
-          zIndex: 1020,
-          top: "60px",
-          backgroundColor: "rgba(255, 255, 255, 0.7)", // Semi-transparent white
-          backdropFilter: "blur(10px)", // Blurs content behind
-          WebkitBackdropFilter: "blur(10px)", // Safari support
-        }}
+        className="home-sticky-bar sticky-top pt-3 pb-3"
+        style={{ top: "var(--navbar-h, 54px)", zIndex: 1020 }}
       >
-        <div className="container-fluid d-flex align-items-center">
+        <div className="container-fluid d-flex align-items-center gap-3">
           <div style={{ flex: 1 }}></div>
 
           <div style={{ flex: 2 }}>
@@ -169,10 +170,10 @@ const Home = () => {
             <Button
               variant="primary"
               size="sm"
-              className="rounded-pill px-2 shadow-sm"
+              className="btn-add-movie"
               onClick={() => navigate("admin/add-movie")}
             >
-              Add Movies
+              + Add Movie
             </Button>
           </div>
         </div>

@@ -3,43 +3,37 @@ import UseAuth from "../../hook/UseAuth";
 import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import UseWebSocket from "../../hook/UseWebSocket";
+const JOBS_PER_PAGE = 8;
 
 const JobRow = React.memo(({ job, retryMutation }) => {
-  return (
-    <tr>
-      <td>{job.imdb_id}</td>
+  const badgeClass = {
+    done:       "queue-badge-done",
+    failed:     "queue-badge-failed",
+    processing: "queue-badge-processing",
+    queued:     "queue-badge-queued",
+  }[job.status] ?? "queue-badge-queued";
 
-      <td>
-        <span
-          className={`badge ${
-            job.status === "done"
-              ? "bg-success"
-              : job.status === "failed"
-                ? "bg-danger"
-                : job.status === "processing"
-                  ? "bg-warning text-dark"
-                  : "bg-secondary"
-          }`}
-        >
-          {job.status}
-        </span>
-      </td>
+  return (
+    <tr className="queue-row">
+      <td>{job.title ? job.title : job.imdb_id}</td>
+
+      <td><span className={`queue-badge ${badgeClass}`}>{job.status}</span></td>
 
       <td>{job.attempts}</td>
 
-      <td>{job.error || "-"}</td>
+      <td className={job.error ? "queue-error-text" : ""}>{job.error || "—"}</td>
 
       <td>
         {job.status === "failed" ? (
           <button
-            className="btn btn-sm btn-warning"
+            className="btn-retry-job"
             onClick={() => retryMutation.mutate(job.imdb_id)}
             disabled={retryMutation.isPending}
           >
             Retry
           </button>
         ) : (
-          job.status
+          <span className={`queue-badge ${badgeClass}`}>{job.status}</span>
         )}
       </td>
     </tr>
@@ -49,6 +43,7 @@ const JobRow = React.memo(({ job, retryMutation }) => {
 const AddMovie = () => {
   const [imdbId, setImdbId] = useState("");
   const [message, setMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   // const socket = useRef(null);
 
@@ -112,9 +107,7 @@ const AddMovie = () => {
 
     onError: (error) => {
       setMessage(
-        error?.response?.data?.error ||
-          error.message ||
-          "Error adding movies",
+        error?.response?.data?.error || error.message || "Error adding movies",
       );
     },
   });
@@ -144,15 +137,12 @@ const AddMovie = () => {
   */
 
   useEffect(() => {
-
     const Socket = socket.current;
 
     const handler = (event) => {
-
       const updatedJob = JSON.parse(event.data);
 
       if (updatedJob.type === "job_update") {
-
         // Update React Query cache directly
         queryClient.setQueryData(["jobs"], (oldJobs = []) => {
           return oldJobs.map((job) =>
@@ -161,20 +151,14 @@ const AddMovie = () => {
               : job,
           );
         });
-
       }
     };
 
-    Socket.addEventListener(
-      "message", handler
-    );
+    Socket.addEventListener("message", handler);
 
     return () => {
-      Socket.removeEventListener(
-        "message", handler
-      );
+      Socket.removeEventListener("message", handler);
     };
-
   }, [queryClient, socket]);
 
   const handleSubmit = (e) => {
@@ -197,7 +181,7 @@ const AddMovie = () => {
 
   if (isLoading) {
     return (
-      <div className="container mt-4">
+      <div className="text-white container text-center mt-4">
         <h3>Loading jobs...</h3>
       </div>
     );
@@ -205,7 +189,7 @@ const AddMovie = () => {
 
   if (error) {
     return (
-      <div className="container mt-4">
+      <div className="text-white text-center container mt-4">
         <h3>Error loading jobs</h3>
       </div>
     );
@@ -213,62 +197,105 @@ const AddMovie = () => {
 
   if (!auth || auth.role !== "ADMIN") {
     return (
-      <div className="container mt-4">
+      <div className="container text-center text-white mt-4">
         <h4>You don't have access to this functionality!</h4>
       </div>
     );
   }
 
+  const totalPages = Math.ceil(jobs.length / JOBS_PER_PAGE);
+  const paginatedJobs = jobs.slice(
+    (currentPage - 1) * JOBS_PER_PAGE,
+    currentPage * JOBS_PER_PAGE,
+  );
+
   return (
     <div className="container mt-4">
-      <h2>Add Movie</h2>
+      <h2 className="queue-page-title">Add Movie</h2>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="add-movie-form">
         <input
           type="text"
-          placeholder="Enter comma separated IMDB ID(s)"
+          placeholder="Enter comma separated IMDB ID(s) e.g. tt0816692, tt1375666"
           value={imdbId}
           onChange={(e) => setImdbId(e.target.value)}
-          className="form-control mb-3"
+          className="add-movie-input"
         />
 
-        <button
-          className="btn btn-primary"
-          disabled={addMovieMutation.isPending}
-        >
+        <button className="btn-add-queue" disabled={addMovieMutation.isPending}>
           {addMovieMutation.isPending ? "Adding..." : "Add to Queue"}
         </button>
       </form>
 
-      {message && <p className="mt-3">{message}</p>}
+      {message && <p className="queue-message">{message}</p>}
 
-      <div className="container mt-4">
-        <h2>Queue Dashboard</h2>
+      <div className="mt-4">
+        <h2 className="queue-page-title">Queue Dashboard</h2>
 
         {jobs.length === 0 ? (
-          <h4>No Movies processed yet!</h4>
+          <div className="queue-empty">No movies processed yet!</div>
         ) : (
-          <table className="table table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>IMDB ID</th>
-                <th>Status</th>
-                <th>Attempts</th>
-                <th>Error</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+          <>
+            <div className="queue-table-wrap">
+              <table className="queue-table">
+                <thead>
+                  <tr>
+                    <th>Title</th>
+                    <th>Status</th>
+                    <th>Attempts</th>
+                    <th>Error</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
 
-            <tbody>
-              {jobs.map((job) => (
-                <JobRow
-                  key={job._id}
-                  job={job}
-                  retryMutation={retryMutation}
-                />
-              ))}
-            </tbody>
-          </table>
+                <tbody>
+                  {paginatedJobs.map((job) => (
+                    <JobRow
+                      key={job._id}
+                      job={job}
+                      retryMutation={retryMutation}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* client side Pagination */}
+            <div className="queue-pagination">
+              <span className="queue-page-info">
+                Showing {(currentPage - 1) * JOBS_PER_PAGE + 1}–
+                {Math.min(currentPage * JOBS_PER_PAGE, jobs.length)} of{" "}
+                {jobs.length} jobs
+              </span>
+              <div className="queue-page-btns">
+                <button
+                  className="queue-page-btn"
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (p) => (
+                    <button
+                      key={p}
+                      className={`queue-page-btn ${p === currentPage ? "active" : ""}`}
+                      onClick={() => setCurrentPage(p)}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+                <button
+                  className="queue-page-btn"
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
