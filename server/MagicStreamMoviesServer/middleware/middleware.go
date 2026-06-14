@@ -13,14 +13,13 @@ func AuthMiddleware(logger *dblogger.DBLogger) gin.HandlerFunc {
 		token, err := utilities.GetAccessToken(c)
 
 		if err != nil {
-			logger.Alerts("ERROR", "Missing or invalid auth header", gin.H{
-				"endpoint": "AuthMiddleware",
-				"error":    err.Error(),
-			})
-			c.JSON(http.StatusUnauthorized, gin.H{
+			// logger.Alerts("ERROR", "Missing or invalid auth header", gin.H{
+			// 	"endpoint": "AuthMiddleware",
+			// 	"error":    err.Error(),
+			// })
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 				"error": "Unauthorized",
 			})
-			c.Abort()
 			return
 		}
 

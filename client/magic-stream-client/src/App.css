@@ -1221,4 +1221,289 @@
   }
 }
 
-/* Verify Email CSS start */
+/* =================================================================
+================================================================= */
+
+/* Ai button CSS start */
+
+.btn-ask-ai {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(170, 59, 255, 0.18),
+    rgba(0, 212, 255, 0.12)
+  );
+  border: 1px solid rgba(170, 59, 255, 0.4);
+  border-radius: 9px;
+  color: #c084fc;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btn-ask-ai:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(170, 59, 255, 0.28),
+    rgba(0, 212, 255, 0.18)
+  );
+  border-color: rgba(170, 59, 255, 0.6);
+  box-shadow: 0 0 16px rgba(170, 59, 255, 0.2);
+}
+
+.ask-ai-icon {
+  font-size: 14px;
+  color: #c084fc;
+}
+
+/* ── Modal shell ── */
+.ai-modal .modal-content {
+  background: #12121a !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 16px !important;
+}
+
+.ai-modal-body {
+  padding: 28px !important;
+}
+
+.ai-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ai-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-modal-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.ai-modal-close:hover {
+  color: #fff;
+}
+
+.ai-modal-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 20px !important;
+}
+
+.ai-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 8px !important;
+}
+
+/* ── Example chips ── */
+.ai-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.ai-example-chip {
+  padding: 9px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.ai-example-chip:hover {
+  background: rgba(170, 59, 255, 0.1);
+  border-color: rgba(170, 59, 255, 0.3);
+  color: #c084fc;
+}
+
+/* ── Prompt textarea ── */
+.ai-prompt-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 10px 14px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+  margin-bottom: 12px;
+}
+
+.ai-prompt-input::placeholder {
+  color: rgba(255, 255, 255, 0.25);
+}
+.ai-prompt-input:focus {
+  border-color: rgba(170, 59, 255, 0.45);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ── Generate button ── */
+.btn-ai-generate {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, #aa3bff, #7928ca);
+  border: none;
+  border-radius: 9px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition:
+    opacity 0.2s,
+    box-shadow 0.2s;
+}
+
+.btn-ai-generate:hover:not(:disabled) {
+  opacity: 0.9;
+  box-shadow: 0 0 20px rgba(170, 59, 255, 0.3);
+}
+
+.btn-ai-generate:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Result box ── */
+.ai-movie-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ai-movie-list::-webkit-scrollbar { width: 4px; }
+.ai-movie-list::-webkit-scrollbar-track { background: transparent; }
+.ai-movie-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+.ai-movie-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  gap: 10px;
+}
+
+.ai-movie-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0; /* allows text-overflow to work */
+}
+
+.ai-movie-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-movie-imdb {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.ai-result-box {
+  margin-top: 14px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+}
+
+.ai-id-pill {
+  padding: 4px 10px;
+  background: rgba(170, 59, 255, 0.12);
+  border: 1px solid rgba(170, 59, 255, 0.3);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c084fc;
+}
+
+.ai-verify-link{
+  text-decoration: none;
+}
+
+.btn-ai-use {
+  width: 100%;
+  padding: 9px;
+  background: #ff2e63;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-ai-use:hover {
+  background: #ff1b55;
+}
+
+/* ── Error box ── */
+.ai-error-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: rgba(255, 46, 99, 0.07);
+  border: 1px solid rgba(255, 46, 99, 0.2);
+  border-radius: 9px;
+  font-size: 13px;
+  color: #ff6b8a;
+  line-height: 1.5;
+}
+
+/* Ai button CSS end */
+
+/* =================================================================
+================================================================= */

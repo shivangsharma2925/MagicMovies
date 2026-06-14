@@ -1,22 +1,18 @@
-import {
-  createContext,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useEffect, useMemo, useState } from "react";
 import api from "../api/axiosConfig";
+import useAxiosPrivate from "../hook/UseAxiosPrivate";
 
 const AuthContext = createContext({});
 
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(null);
   const [loading, setLoading] = useState(true);
+  const axiosPrivate = useAxiosPrivate();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await api.get("/profile/me");
+        const response = await axiosPrivate.get("/profile/me");
         if (response.data.error) {
           setAuth(null);
           return;

@@ -32,10 +32,6 @@ func main() {
 	// router := gin.Default()
 	router := gin.New()
 
-	// Custom middleware
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
-
 	// Load env
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -98,6 +94,10 @@ func main() {
 	config.MaxAge = 12 * time.Hour
 
 	router.Use(cors.New(config))
+
+	// Custom middleware
+	// router.Use(gin.Logger())
+	router.Use(gin.Recovery())
 
 	// establish routes for requests
 	routes.SetupRoutes(router, db, dbLogger, redisOpt, redisClient)

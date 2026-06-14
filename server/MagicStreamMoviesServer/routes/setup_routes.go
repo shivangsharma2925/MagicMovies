@@ -38,6 +38,10 @@ func SetupRoutes(
 	ipLimiter := middleware.NewRateLimiter(2, 5)    // public APIs, rate = 2 tokens/sec, burst = 5 req at a same time
 	userLimiter := middleware.NewRateLimiter(5, 10) // private APIs, rate = 5 tokens/sec, burst = 10 req at a same time
 
+	router.OPTIONS("/*path", func(c *gin.Context) {
+		c.AbortWithStatus(204)
+	})
+
 	// Special request for Websocket connection
 	router.GET("/ws", websocket.HandleConnections)
 
@@ -72,5 +76,6 @@ func SetupRoutes(
 
 		protected.GET("/jobs", jobController.GetJobs)
 		protected.POST("/jobs/retry/:imdb_id", jobController.RetryJob)
+		protected.POST("/ai/imdb", jobController.AskAiImdb)
 	}
 }

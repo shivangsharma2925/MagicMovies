@@ -3,6 +3,7 @@ import UseAuth from "../../hook/UseAuth";
 import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import UseWebSocket from "../../hook/UseWebSocket";
+import AskAiBtn from "../../utils/AskAiModal";
 const JOBS_PER_PAGE = 8;
 
 const JobRow = React.memo(({ job, retryMutation }) => {
@@ -86,13 +87,16 @@ const AddMovie = () => {
 
   const addMovieMutation = useMutation({
     mutationFn: async (imdbIds) => {
+      setMessage("Movies added to queue!");
       return axiosPrivate.post("/addmovie", {
         imdb_ids: imdbIds,
       });
     },
 
     onSuccess: () => {
-      setMessage("Movies added to queue!");
+      setTimeout(() => {
+        setMessage("");
+      }, 2000);
 
       setImdbId("");
 
@@ -221,6 +225,8 @@ const AddMovie = () => {
           onChange={(e) => setImdbId(e.target.value)}
           className="add-movie-input"
         />
+
+        <AskAiBtn onUseIds={(ids) => setImdbId(ids)} />
 
         <button className="btn-add-queue" disabled={addMovieMutation.isPending}>
           {addMovieMutation.isPending ? "Adding..." : "Add to Queue"}

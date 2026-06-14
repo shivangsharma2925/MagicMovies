@@ -582,7 +582,7 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 	// Split input
 	ids := strings.Split(req.ImdbIDs, ",")
 
-	if len(ids) > 5 {
+	if len(ids) > 10 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Too many IDs"})
 		return
 	}
@@ -888,7 +888,7 @@ func (mc *MovieController) GetReviewRanking(review string, c *gin.Context) (stri
 	allRankingNames := strings.Join(rankingNames, ",")
 
 	var GEMINI_API_KEY = os.Getenv("GEMINI_API_KEY")
-	var base_Prompt = os.Getenv("BASE_PROMPT")
+	var base_Prompt = os.Getenv("REVIEW_BASE_PROMPT")
 
 	if GEMINI_API_KEY == "" {
 		return "", 0, errors.New("could not find GEMINI SECRET KEY")

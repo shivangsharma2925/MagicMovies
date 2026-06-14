@@ -2,13 +2,20 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"regexp"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/generative-ai-go/genai"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/models"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/queue"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/utilities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -24,17 +31,6 @@ func NewJobController(db *database.MongoDB, dbLogger *dblogger.DBLogger) *JobCon
 		dbLogger: dbLogger,
 	}
 }
-
-// func (jc *JobController) GetJobs(c *gin.Context) {
-// 	jobCollection := jc.db.Collection("jobs")
-
-// 	cursor, _ := jobCollection.Find(context.Background(), bson.M{})
-
-	// var jobs []models.Job
-// 	cursor.All(context.Background(), &jobs)
-
-// 	c.JSON(http.StatusOK, jobs)
-// }
 
 func (jc *JobController) GetJobs(c *gin.Context) {
 	jobCollection := jc.db.Collection("jobs")
@@ -59,7 +55,7 @@ func (jc *JobController) GetJobs(c *gin.Context) {
 		}}},
 		// 4. Project only the fields you want
 		bson.D{{Key: "$project", Value: bson.D{
-			{Key: "_id", Value: 0},
+			{Key: "_id", Value: 1},
 			// Include other job fields you need here, for example:
 			{Key: "imdb_id", Value: 1},
 			{Key: "status", Value: 1},
@@ -68,6 +64,9 @@ func (jc *JobController) GetJobs(c *gin.Context) {
 			// Extract just the title from the joined movie document
 			{Key: "title", Value: "$movie_details.title"},
 		}}},
+		bson.D{
+			{Key: "$limit", Value: 30},
+		},
 	}
 
 	// Execute the aggregation
@@ -75,7 +74,7 @@ func (jc *JobController) GetJobs(c *gin.Context) {
 	if err != nil {
 		jc.dbLogger.Alerts("Error", "Error in fetching jobs", gin.H{
 			"enpoint": "/GetJobs",
-			"error": err.Error(),
+			"error":   err.Error(),
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
@@ -87,7 +86,7 @@ func (jc *JobController) GetJobs(c *gin.Context) {
 	if err := cursor.All(context.Background(), &jobs); err != nil {
 		jc.dbLogger.Alerts("Error", "Error in decoding jobs", gin.H{
 			"enpoint": "/GetJobs",
-			"error": err.Error(),
+			"error":   err.Error(),
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
@@ -109,4 +108,130 @@ func (jc *JobController) RetryJob(c *gin.Context) {
 	queue.EnqueueMovie(imdbID)
 
 	c.JSON(200, gin.H{"message": "Retry queued"})
+}
+
+func (jc *JobController) AskAiImdb(c *gin.Context) {
+
+	ctx, cancel := context.WithTimeout(c, 30*time.Second)
+	defer cancel()
+
+	role, err := utilities.GetRolefromContect(c)
+	if err != nil {
+		jc.dbLogger.Alerts("ERROR", "Error in getting role", gin.H{
+			"endpoint": "/AskAiImdb",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Something went wrong"})
+		return
+	}
+
+	if role != "ADMIN" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User must be Admin to access this functionality"})
+		return
+	}
+
+	type AiResponse struct {
+		MovieName string `json:"movie_name"`
+		ImdbId    string `json:"imdbid"`
+	}
+
+	var AiImdbRequest struct {
+		Prompt string `json:"prompt"`
+	}
+
+	var AiImdbResponse struct {
+		Ids   []AiResponse `json:"ids,omitempty"`
+		Error string       `json:"error,omitempty"`
+	}
+
+	if err := c.ShouldBind(&AiImdbRequest); err != nil {
+		jc.dbLogger.Alerts("ERROR", "Error in binding request", gin.H{
+			"endpoint": "/AskAiImdb",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+		return
+	}
+
+	if len(strings.TrimSpace(AiImdbRequest.Prompt)) < 3 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid Request"})
+		return
+	}
+
+	client, err := GetGeminiClient(ctx)
+	if err != nil {
+		jc.dbLogger.Alerts("ERROR", "Error in connecting to AI model", gin.H{
+			"endpoint": "/AskAiImdb",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect"})
+		return
+	}
+
+	model := client.GenerativeModel("gemini-2.5-flash")
+
+	aiBasePrompt := os.Getenv("IMDB_BASE_PROMPT")
+
+	imdbPattern := regexp.MustCompile(`^tt\d+$`)
+
+	resp, err := model.GenerateContent(ctx, genai.Text(aiBasePrompt+"\n\nUser request: "+AiImdbRequest.Prompt))
+	if err != nil {
+		jc.dbLogger.Alerts("ERROR", "Error in fetching reponse from AI", gin.H{
+			"endpoint": "/AskAiImdb",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Request failed"})
+		return
+	}
+
+	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+		AiImdbResponse.Error = "no response from AI"
+		c.JSON(http.StatusOK, AiImdbResponse)
+		return
+	}
+
+	raw := strings.TrimSpace(fmt.Sprintf("%v", resp.Candidates[0].Content.Parts[0]))
+	raw = strings.ReplaceAll(raw, " ", "") // strip any spaces between IDs
+
+	// must be INVALID or match tt\d+(,tt\d+)*
+	if raw == "INVALID" {
+		AiImdbResponse.Error = "invalid"
+		c.JSON(http.StatusOK, AiImdbResponse)
+		return
+	}
+
+	moviesDetail := strings.Split(raw, ",")
+
+	for _, movieDetail := range moviesDetail {
+		movieDetail = strings.TrimSpace(movieDetail)
+
+		if movieDetail == "" {
+			continue
+		}
+
+		lastColon := strings.LastIndex(movieDetail, ":")
+		if lastColon == -1 {
+			continue
+		}
+
+		movie_name := movieDetail[:lastColon]
+		imdb_id := strings.TrimSpace(movieDetail[lastColon+1:])
+
+		if !imdbPattern.MatchString(imdb_id) {
+			continue
+		}
+
+		AiImdbResponse.Ids = append(AiImdbResponse.Ids, AiResponse{
+			MovieName: movie_name,
+			ImdbId:    imdb_id,
+		})
+	}
+
+	if len(AiImdbResponse.Ids) == 0 {
+		AiImdbResponse.Error = "invalid"
+		c.JSON(http.StatusOK, AiImdbResponse)
+		return
+	}
+
+	c.JSON(http.StatusOK, AiImdbResponse)
 }

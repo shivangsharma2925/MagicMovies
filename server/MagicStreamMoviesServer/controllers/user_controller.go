@@ -736,7 +736,7 @@ func (uc *UserController) GetProfile(c *gin.Context) {
 
 	err = usercollection.FindOne(ctx, bson.M{"user_id": userId}).Decode(&user)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid credentials"})
 		return
 	}
 

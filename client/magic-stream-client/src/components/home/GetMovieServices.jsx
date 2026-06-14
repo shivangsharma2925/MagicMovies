@@ -1,4 +1,4 @@
-import axiosConfig from "../../api/axiosConfig"
+import apiwocredential from "../../api/axiosConfigwocredential"
 
 export const fetchMovies = async ({ search = "", pageParam = "" }) => {
   const trimmedSearch = search.trim();
@@ -7,7 +7,7 @@ export const fetchMovies = async ({ search = "", pageParam = "" }) => {
     ? `/movies?search=${encodeURIComponent(trimmedSearch)}&cursor=${pageParam}&limit=10`
     : `/movies?cursor=${pageParam}&limit=10`;
 
-  const response = await axiosConfig.get(url);
+  const response = await apiwocredential.get(url);
 
   return response.data;
 };
@@ -15,7 +15,7 @@ export const fetchMovies = async ({ search = "", pageParam = "" }) => {
 export const fetchMovieSuggestions = async (search) => {
   if (!search.trim()) return [];
 
-  const response = await axiosConfig.get(
+  const response = await apiwocredential.get(
     `/movies/suggestions?q=${encodeURIComponent(search)}`
   );
   return response.data;
