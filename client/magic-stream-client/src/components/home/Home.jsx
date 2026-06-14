@@ -98,7 +98,7 @@ const Home = () => {
 
     const handler = (event) => {
       const data = JSON.parse(event.data);
-      
+
       if (data.type === "new_movie") {
         setHasNewMovies(true);
       }
@@ -123,7 +123,7 @@ const Home = () => {
     message = "Error fetching movies";
   }
 
-  if(hasNewMovies){
+  if (hasNewMovies) {
     setTimeout(() => {
       setHasNewMovies(false);
     }, 5000);
@@ -138,6 +138,11 @@ const Home = () => {
             onClick={() => {
               queryClient.invalidateQueries({
                 queryKey: ["movies"],
+              });
+
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth",
               });
 
               setHasNewMovies(false);
@@ -160,7 +165,10 @@ const Home = () => {
               search={search}
               setSearch={setSearch}
               suggestions={suggestions}
-              onSuggestionClick={(title) => {setSearch(title);setShowSuggestions(false);}}
+              onSuggestionClick={(title) => {
+                setSearch(title);
+                setShowSuggestions(false);
+              }}
               showSuggestions={showSuggestions}
               setShowSuggestions={setShowSuggestions}
             />

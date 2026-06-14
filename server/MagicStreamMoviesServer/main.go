@@ -33,6 +33,7 @@ func main() {
 	router := gin.New()
 
 	// Custom middleware
+	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
 	// Load env

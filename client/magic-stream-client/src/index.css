@@ -52,14 +52,20 @@ html {
   background-image:
     radial-gradient(circle at 15% 15%, rgb(255 46 99 / 40%) 0%, transparent 60%), 
     radial-gradient(circle at 85% 85%, rgb(0 212 255 / 40%) 0%, transparent 60%) !important;
-  background-attachment: fixed;
-  min-height: 100vh;
+  background-attachment: scroll;
+  min-height: 100%;
 }
 
 body {
   margin: 0;
   background: transparent !important; 
-  min-height: 100vh;
+  min-height: 100%;
+}
+
+@media (min-width: 992px) {
+  html {
+    background-attachment: fixed; /* parallax effect on desktop only */
+  }
 }
 
 #root {

@@ -99,7 +99,7 @@ const Register = () => {
   }, []);
 
   return (
-    <Container className="login-container d-flex align-items-center justify-content-center">
+    <Container className="login-container d-flex align-items-center justify-content-center my-4">
       <div className="login-card" style={{ maxWidth: 400 }}>
         <div className="text-center mb-4">
           <img src={logo} alt="Logo" width={60} className="mb-2" />
