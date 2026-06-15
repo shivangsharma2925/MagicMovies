@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     fetchUser();
-  }, []);
+  }, [axiosPrivate]);
 
   const logout = useCallback(async () => {
     try {

@@ -972,6 +972,7 @@
   padding: 10px 20px;
   background: #ff2e63;
   border: none;
+  width: stretch;
   border-radius: 9px;
   color: #fff;
   font-size: 13px;
@@ -1229,6 +1230,8 @@
 .btn-ask-ai {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: stretch;
   gap: 7px;
   padding: 10px 16px;
   background: linear-gradient(
@@ -1501,6 +1504,16 @@
   font-size: 13px;
   color: #ff6b8a;
   line-height: 1.5;
+}
+
+.ai-context-box{
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: rgb(178 46 255 / 10%);
+  border: 1px solid rgb(151 46 255 / 20%);
+  border-radius: 9px;
+  font-size: 13px;
+  color: #6b7fff;
 }
 
 /* Ai button CSS end */

@@ -81,7 +81,7 @@ func main() {
 			origins[i] = strings.TrimSpace(origins[i])
 		}
 	} else {
-		origins = []string{"http://localhost:3000"}
+		origins = []string{"https://www.magicmovies.site"}
 	}
 
 	//CORS policy

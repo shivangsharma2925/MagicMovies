@@ -123,12 +123,6 @@ const Home = () => {
     message = "Error fetching movies";
   }
 
-  if (hasNewMovies) {
-    setTimeout(() => {
-      setHasNewMovies(false);
-    }, 5000);
-  }
-
   return (
     <>
       {hasNewMovies && (

@@ -7,22 +7,27 @@ import AskAiBtn from "../../utils/AskAiModal";
 const JOBS_PER_PAGE = 8;
 
 const JobRow = React.memo(({ job, retryMutation }) => {
-  const badgeClass = {
-    done:       "queue-badge-done",
-    failed:     "queue-badge-failed",
-    processing: "queue-badge-processing",
-    queued:     "queue-badge-queued",
-  }[job.status] ?? "queue-badge-queued";
+  const badgeClass =
+    {
+      done: "queue-badge-done",
+      failed: "queue-badge-failed",
+      processing: "queue-badge-processing",
+      queued: "queue-badge-queued",
+    }[job.status] ?? "queue-badge-queued";
 
   return (
     <tr className="queue-row">
       <td>{job.title ? job.title : job.imdb_id}</td>
 
-      <td><span className={`queue-badge ${badgeClass}`}>{job.status}</span></td>
+      <td>
+        <span className={`queue-badge ${badgeClass}`}>{job.status}</span>
+      </td>
 
       <td>{job.attempts}</td>
 
-      <td className={job.error ? "queue-error-text" : ""}>{job.error || "—"}</td>
+      <td className={job.error ? "queue-error-text" : ""}>
+        {job.error || "—"}
+      </td>
 
       <td>
         {job.status === "failed" ? (
@@ -226,13 +231,17 @@ const AddMovie = () => {
           className="add-movie-input"
         />
 
-        <AskAiBtn onUseIds={(ids) => setImdbId(ids)} />
+        <div className="d-flex justify-content-space-between gap-2">
+          <AskAiBtn onUseIds={(ids) => setImdbId(ids)} />
 
-        <button className="btn-add-queue" disabled={addMovieMutation.isPending}>
-          {addMovieMutation.isPending ? "Adding..." : "Add to Queue"}
-        </button>
+          <button
+            className="btn-add-queue"
+            disabled={addMovieMutation.isPending}
+          >
+            {addMovieMutation.isPending ? "Adding..." : "Add to Queue"}
+          </button>
+        </div>
       </form>
-
       {message && <p className="queue-message">{message}</p>}
 
       <div className="mt-4">

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/generative-ai-go/genai"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/models"
@@ -18,6 +17,7 @@ import (
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/utilities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"google.golang.org/genai"
 )
 
 type JobController struct {
@@ -168,13 +168,36 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 		return
 	}
 
-	model := client.GenerativeModel("gemini-2.5-flash")
+	// model := client.GenerativeModel("gemini-2.5-flash")
 
-	aiBasePrompt := os.Getenv("IMDB_BASE_PROMPT")
+	promptBytes, err := os.ReadFile("prompts/imdb_prompt.txt")
+	if err != nil {
+		jc.dbLogger.Alerts("ERROR", "Error in executing command", gin.H{
+			"endpoint": "/AskAiImdb",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in executing command"})
+		return
+	}
 
-	imdbPattern := regexp.MustCompile(`^tt\d+$`)
+	aiBasePrompt := string(promptBytes)
 
-	resp, err := model.GenerateContent(ctx, genai.Text(aiBasePrompt+"\n\nUser request: "+AiImdbRequest.Prompt))
+	fullPrompt := fmt.Sprintf("%s\n\nUser request: %s", aiBasePrompt, AiImdbRequest.Prompt)
+
+	temp := float32(0)
+	config := &genai.GenerateContentConfig{
+		Tools: []*genai.Tool{
+			{GoogleSearch: &genai.GoogleSearch{}}, // Activates the grounding tool natively
+		},
+		Temperature:      &temp, // Recommended by Google for optimal search grounding
+	}
+
+	resp, err := client.Models.GenerateContent(
+		ctx,
+		"gemini-2.5-flash",
+		genai.Text(fullPrompt),
+		config,
+	)
 	if err != nil {
 		jc.dbLogger.Alerts("ERROR", "Error in fetching reponse from AI", gin.H{
 			"endpoint": "/AskAiImdb",
@@ -184,46 +207,63 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 		return
 	}
 
-	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+	rawText := strings.TrimSpace(resp.Text())
+	if rawText == "" {
 		AiImdbResponse.Error = "no response from AI"
 		c.JSON(http.StatusOK, AiImdbResponse)
 		return
 	}
 
-	raw := strings.TrimSpace(fmt.Sprintf("%v", resp.Candidates[0].Content.Parts[0]))
-	raw = strings.ReplaceAll(raw, " ", "") // strip any spaces between IDs
+	rawText = strings.TrimPrefix(rawText, "```json")
+	rawText = strings.TrimPrefix(rawText, "```")
+	rawText = strings.TrimSuffix(rawText, "```")
+	rawText = strings.TrimSpace(rawText)
 
-	// must be INVALID or match tt\d+(,tt\d+)*
-	if raw == "INVALID" {
+	var parsed struct {
+		Invalid bool `json:"invalid"`
+		Movies  []struct {
+			MovieName string `json:"movie_name"`
+			ImdbId    string `json:"imdbid"`
+		} `json:"movies"`
+	}
+
+	if err := json.Unmarshal([]byte(rawText), &parsed); err != nil {
+		jc.dbLogger.Alerts("ERROR", "Invalid JSON from AI", gin.H{
+			"endpoint": "/AskAiImdb",
+			"response": rawText,
+			"error":    err.Error(),
+		})
+		AiImdbResponse.Error = "invalid AI response"
+		c.JSON(http.StatusOK, AiImdbResponse)
+		return
+	}
+
+	if parsed.Invalid {
 		AiImdbResponse.Error = "invalid"
 		c.JSON(http.StatusOK, AiImdbResponse)
 		return
 	}
 
-	moviesDetail := strings.Split(raw, ",")
+	imdbPattern := regexp.MustCompile(`^tt\d+$`)
+	seen := map[string]bool{}
 
-	for _, movieDetail := range moviesDetail {
-		movieDetail = strings.TrimSpace(movieDetail)
+	for _, movie := range parsed.Movies {
+		movieName := strings.TrimSpace(movie.MovieName)
+		imdbID := strings.TrimSpace(movie.ImdbId)
 
-		if movieDetail == "" {
+		if !imdbPattern.MatchString(imdbID) {
 			continue
 		}
 
-		lastColon := strings.LastIndex(movieDetail, ":")
-		if lastColon == -1 {
+		if seen[imdbID] {
 			continue
 		}
 
-		movie_name := movieDetail[:lastColon]
-		imdb_id := strings.TrimSpace(movieDetail[lastColon+1:])
-
-		if !imdbPattern.MatchString(imdb_id) {
-			continue
-		}
+		seen[imdbID] = true
 
 		AiImdbResponse.Ids = append(AiImdbResponse.Ids, AiResponse{
-			MovieName: movie_name,
-			ImdbId:    imdb_id,
+			MovieName: movieName,
+			ImdbId:    imdbID,
 		})
 	}
 

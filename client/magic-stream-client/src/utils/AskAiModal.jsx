@@ -165,6 +165,7 @@ const AskAiBtn = ({ onUseIds }) => {
                     </span>
                   </div>
                 ))}
+              <div className="ai-context-box">Not Satisfied ? Try adding more Context like<em> Year, Genre, Cast, etc</em></div>
               </div>
               <button className="btn-ai-use" onClick={handleUseIds}>
                 Use these IDs →

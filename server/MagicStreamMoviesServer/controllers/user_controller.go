@@ -154,7 +154,7 @@ func (uc *UserController) RegisterUser(c *gin.Context) {
 					"error":      err.Error(),
 				})
 				sendEmail = false
-			}else {
+			} else {
 				uc.otpService.SetResendCooldown(ctxOtp, user.UserID)
 			}
 		}
@@ -708,8 +708,25 @@ func (uc *UserController) RefreshTokenHandler(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("access_token", newToken, 1800, "/", "localhost", true, true)          // expires in 30 mins
-	c.SetCookie("refresh_token", newRefreshToken, 86400, "/", "localhost", true, true) // expires in 24 hours
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "access_token",
+		Value:    newToken,
+		Path:     "/",
+		MaxAge:   1800,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    newRefreshToken,
+		Path:     "/",
+		MaxAge:   24 * 60 * 60,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Tokens refreshed"})
 }

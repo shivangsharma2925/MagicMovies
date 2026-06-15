@@ -93,7 +93,7 @@ const ResetPassword = () => {
                   role="status"
                   aria-hidden="true"
                 ></span>
-                'Updating...'
+                Updating...
               </>
             ) : (
               "Update Password"

@@ -102,6 +102,10 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	})
 
 	log.Printf("Movie processed: %s", imdbID)
+	p.movieService.DbLogger.Log("PROCESSED", "Movie processed correctly", map[string]any{
+		"endpoint": "/processMovies",
+		"movieID":  imdbID,
+	})
 
 	return nil
 

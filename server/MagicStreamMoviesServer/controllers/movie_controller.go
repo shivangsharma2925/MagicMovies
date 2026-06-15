@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/generative-ai-go/genai"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
@@ -26,7 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 type MovieController struct {
@@ -255,7 +253,7 @@ func (mc *MovieController) GetSearchedMovies(c *gin.Context, ctx context.Context
 	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "Error in searching movies", gin.H{
 			"endpoint": "/GetSearchedMovies",
-			"error": err.Error(),
+			"error":    err.Error(),
 		})
 
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -267,7 +265,7 @@ func (mc *MovieController) GetSearchedMovies(c *gin.Context, ctx context.Context
 	if err := cursor.All(ctx, &movies); err != nil {
 		mc.dbLogger.Alerts("ERROR", "Error in parsing movies", gin.H{
 			"endpoint": "/GetSearchedMovies",
-			"error": err.Error(),
+			"error":    err.Error(),
 		})
 
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -519,7 +517,7 @@ func (mc *MovieController) GetSuggestions(c *gin.Context) {
 	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "Error in fetching movies", gin.H{
 			"endpoint": "/GetSuggestions",
-			"error": err.Error(),
+			"error":    err.Error(),
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch suggestions"})
 		return
@@ -535,7 +533,7 @@ func (mc *MovieController) GetSuggestions(c *gin.Context) {
 	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "Failed to parse suggestions", gin.H{
 			"endpoint": "/GetSuggestions",
-			"error": err.Error(),
+			"error":    err.Error(),
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch suggestions"})
 		return
@@ -887,12 +885,7 @@ func (mc *MovieController) GetReviewRanking(review string, c *gin.Context) (stri
 
 	allRankingNames := strings.Join(rankingNames, ",")
 
-	var GEMINI_API_KEY = os.Getenv("GEMINI_API_KEY")
 	var base_Prompt = os.Getenv("REVIEW_BASE_PROMPT")
-
-	if GEMINI_API_KEY == "" {
-		return "", 0, errors.New("could not find GEMINI SECRET KEY")
-	}
 
 	//Make this connection only once in main.go and pass it here to reduce time
 	// client, err := genai.NewClient(ctx, option.WithAPIKey(GEMINI_API_KEY))
@@ -903,13 +896,24 @@ func (mc *MovieController) GetReviewRanking(review string, c *gin.Context) (stri
 		return "", 0, err
 	}
 
-	model := client.GenerativeModel("gemini-2.5-flash") //gemini-3-flash-preview
+	// model := client.GenerativeModel("gemini-2.5-flash") //gemini-3-flash-preview
 
 	basePrompt := strings.Replace(base_Prompt, "{rankings}", allRankingNames, 1)
 
-	// response, err := llm.Call(ctx, basePrompt+review)
-	resp, err := model.GenerateContent(ctx, genai.Text(basePrompt+review))
+	fullPrompt := basePrompt + review
 
+	// response, err := llm.Call(ctx, basePrompt+review)
+	temp := float32(0)
+
+	resp, err := client.Models.GenerateContent(
+		ctx,
+		"gemini-2.5-flash-lite",
+		genai.Text(fullPrompt),
+		&genai.GenerateContentConfig{
+			Temperature:      &temp,
+			ResponseMIMEType: "text/plain",
+		},
+	)
 	if err != nil {
 		return "", 0, err
 	}
@@ -918,7 +922,7 @@ func (mc *MovieController) GetReviewRanking(review string, c *gin.Context) (stri
 		return "", 0, errors.New("empty response from Gemini")
 	}
 
-	response := strings.TrimSpace(fmt.Sprintf("%v", resp.Candidates[0].Content.Parts[0]))
+	response := strings.TrimSpace(resp.Text())
 
 	// Safety: normalize response
 	response = strings.Trim(response, ".! \n\t")
@@ -1035,7 +1039,10 @@ func GetGeminiClient(ctx context.Context) (*genai.Client, error) {
 			return
 		}
 
-		geminiClient, err = genai.NewClient(ctx, option.WithAPIKey(apiKey))
+		geminiClient, err = genai.NewClient(ctx, &genai.ClientConfig{
+			APIKey:  apiKey,
+			Backend: genai.BackendGeminiAPI,
+		})
 	})
 
 	return geminiClient, err
