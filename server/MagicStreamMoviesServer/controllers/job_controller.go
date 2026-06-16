@@ -189,25 +189,51 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 		Tools: []*genai.Tool{
 			{GoogleSearch: &genai.GoogleSearch{}}, // Activates the grounding tool natively
 		},
-		Temperature:      &temp, // Recommended by Google for optimal search grounding
+		Temperature: &temp, // Recommended by Google for optimal search grounding
 	}
 
-	resp, err := client.Models.GenerateContent(
-		ctx,
-		"gemini-2.5-flash",
-		genai.Text(fullPrompt),
-		config,
-	)
-	if err != nil {
-		jc.dbLogger.Alerts("ERROR", "Error in fetching reponse from AI", gin.H{
+	rawText := ""
+	modelArray := []string{"gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview",}
+
+	for _, model := range modelArray {
+
+		jc.dbLogger.Log("INFO", "Trying Gemini model", gin.H{
 			"endpoint": "/AskAiImdb",
-			"error":    err.Error(),
+			"model":    model,
 		})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Request failed"})
-		return
+
+		resp, err := client.Models.GenerateContent(
+			ctx,
+			model,
+			genai.Text(fullPrompt),
+			config,
+		)
+
+		if err != nil {
+			errText := strings.ToLower(err.Error())
+			if 	strings.Contains(errText, "quota") ||
+				strings.Contains(errText, "resource_exhausted") ||
+				strings.Contains(errText, "429") {
+				jc.dbLogger.Alerts("ERROR", "Quota exceeded", gin.H{
+					"endpoint": "/AskAiImdb",
+					"error":    err.Error(),
+					"model":    model,
+				})
+				continue
+			} else {
+				jc.dbLogger.Alerts("ERROR", "Error in fetching response from AI", gin.H{
+					"endpoint": "/AskAiImdb",
+					"error":    err.Error(),
+				})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Request failed"})
+				return
+			}
+		} else {
+			rawText = strings.TrimSpace(resp.Text())
+			break
+		}
 	}
 
-	rawText := strings.TrimSpace(resp.Text())
 	if rawText == "" {
 		AiImdbResponse.Error = "no response from AI"
 		c.JSON(http.StatusOK, AiImdbResponse)

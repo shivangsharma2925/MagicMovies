@@ -152,9 +152,10 @@ const Home = () => {
         style={{ top: "var(--navbar-h, 54px)", zIndex: 1020 }}
       >
         <div className="container-fluid d-flex align-items-center gap-3">
-          <div style={{ flex: 1 }}></div>
+          {/* <div style={{ flex: 1 }}></div> */}
 
-          <div style={{ flex: 2 }}>
+          <div style={{ flex: 1 }}>
+            
             <SearchBar
               search={search}
               setSearch={setSearch}
@@ -166,16 +167,18 @@ const Home = () => {
               showSuggestions={showSuggestions}
               setShowSuggestions={setShowSuggestions}
             />
+            
           </div>
 
-          <div style={{ flex: 1, textAlign: "right" }}>
+          <div style={{ lexShrink: 0 , textAlign: "right" }}>
             <Button
               variant="primary"
               size="sm"
               className="btn-add-movie"
               onClick={() => navigate("admin/add-movie")}
             >
-              + Add Movie
+              <span className="btn-add-full">+ Add Movie</span>
+              <span className="btn-add-short">+ Movie</span>
             </Button>
           </div>
         </div>

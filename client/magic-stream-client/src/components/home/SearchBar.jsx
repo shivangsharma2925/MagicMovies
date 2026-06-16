@@ -28,11 +28,10 @@ const SearchBar = ({
   }, [setShowSuggestions]);
 
   return (
-    <div
-      ref={searchRef}
-      className="search-input-wrapper"
-    >
-      <span className="search-field-icon" aria-hidden="true">&#128269;</span>
+    <div ref={searchRef} className="search-input-wrapper">
+      <span className="search-field-icon" aria-hidden="true">
+        &#128269;
+      </span>
       <Form.Control
         className="search-field"
         type="text"
@@ -44,7 +43,6 @@ const SearchBar = ({
           }
         }}
         onChange={(e) => {
-
           setSearch(e.target.value);
 
           if (e.target.value.trim().length >= 2) {
@@ -54,7 +52,18 @@ const SearchBar = ({
           }
         }}
       />
-
+      {search && (
+        <button
+          className="search-clear-btn"
+          onClick={() => {
+            setSearch("");
+            setShowSuggestions(false);
+          }}
+          aria-label="Clear search"
+        >
+          ×
+        </button>
+      )}
       {showSuggestions && (
         <SuggestionsDropdown
           suggestions={suggestions}
