@@ -55,20 +55,19 @@ type TMDBFindResponse struct {
 }
 
 type TMDBMovieDetails struct {
-	// removed temporarily
-	// Title      string  `json:"title"`
-	// PosterPath string  `json:"poster_path"`
-	// Rating     float64 `json:"vote_average"`
-	// Genres     []struct {
-	// 	ID   int    `json:"id"`
-	// 	Name string `json:"name"`
-	// } `json:"genres"`
+	Title      string  `json:"title"`
+	PosterPath string  `json:"poster_path"`
+	Rating     float64 `json:"vote_average"`
+	Genres     []struct {
+		ID   int    `json:"id"`
+		Name string `json:"name"`
+	} `json:"genres"`
 	IsAdult     bool   `json:"adult"`
 	Overview    string `json:"overview"`
 	ReleaseDate string `json:"release_date"`
 	Tagline     string `json:"tagline"`
 	Runtime     int    `json:"runtime"`
-	// BackdropPath string  `json:"backdrop_path"`
+	BackdropPath string  `json:"backdrop_path"`
 	VoteAvg      float64 `json:"vote_average"`
 }
 
@@ -81,19 +80,18 @@ type TMDBVideoResponse struct {
 }
 
 type MovieData struct {
-	// removed temporarily
 	ImdbID string
-	// Title     string
-	// Poster    string
-	// Genres    []Genre
-	// YoutubeID string
-	// Ranking   Ranking
+	Title     string
+	Poster    string
+	Genres    []Genre
+	YoutubeID string
+	Ranking   Ranking
 	IsAdult     bool   `json:"adult"`
 	Overview    string `json:"overview"`
 	ReleaseDate string `json:"release_date"`
 	Tagline     string `json:"tagline"`
 	Runtime     int    `json:"runtime"`
-	// BackdropPath string  `json:"backdrop_path"`
+	BackdropPath string  `json:"backdrop_path"`
 	VoteAvg      float64 `json:"vote_average"`
 }
 
