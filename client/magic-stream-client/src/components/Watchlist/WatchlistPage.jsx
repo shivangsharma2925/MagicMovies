@@ -9,7 +9,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useWatchlists } from "../../hook/UseWatchlists";
 import CreateWatchlistModal from "./CreateWatchlistModal";
-import AddToWatchlistModal from "./WatchlistPanel";
+import WatchlistPanel from "./WatchListPanel";
 
 export default function WatchlistPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -83,7 +83,7 @@ export default function WatchlistPage() {
         </div>
       )}
 
-      {!isEmpty && <AddToWatchlistModal />}
+      {!isEmpty && <WatchlistPanel />}
     </>
   );
 }

@@ -134,7 +134,7 @@ func MapToSchema(data *models.MovieData) *models.Movie {
 		ReleaseDate:  data.ReleaseDate,
 		Tagline:      data.Tagline,
 		Runtime:      data.Runtime,
-		BackdropPath: data.BackdropPath,
+		// BackdropPath: data.BackdropPath,
 		VoteAvg:      data.VoteAvg,
 	}
 }

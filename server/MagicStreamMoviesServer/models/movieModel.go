@@ -68,7 +68,7 @@ type TMDBMovieDetails struct {
 	ReleaseDate string `json:"release_date"`
 	Tagline     string `json:"tagline"`
 	Runtime     int    `json:"runtime"`
-	BackdropPath string  `json:"backdrop_path"`
+	// BackdropPath string  `json:"backdrop_path"`
 	VoteAvg      float64 `json:"vote_average"`
 }
 
@@ -93,7 +93,7 @@ type MovieData struct {
 	ReleaseDate string `json:"release_date"`
 	Tagline     string `json:"tagline"`
 	Runtime     int    `json:"runtime"`
-	BackdropPath string  `json:"backdrop_path"`
+	// BackdropPath string  `json:"backdrop_path"`
 	VoteAvg      float64 `json:"vote_average"`
 }
 

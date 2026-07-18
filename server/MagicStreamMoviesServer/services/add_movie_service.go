@@ -162,13 +162,13 @@ func (ms *MovieService) FetchMovieData(imdbID string, ctx context.Context) (*mod
 		// Genres:      utilities.MapGenres(details.Genres, ms.genreMap),
 		// YoutubeID:   youtubeID,
 		// Ranking:     utilities.GetRanking(details.Rating),
-		// IsAdult:     details.IsAdult,
-		// Overview:    details.Overview,
-		// ReleaseDate: details.ReleaseDate,
-		// Tagline:     details.Tagline,
-		// Runtime:     details.Runtime,
-		BackdropPath: "https://image.tmdb.org/t/p/w1280" + details.BackdropPath,
-		// VoteAvg:      details.VoteAvg,
+		IsAdult:     details.IsAdult,
+		Overview:    details.Overview,
+		ReleaseDate: details.ReleaseDate,
+		Tagline:     details.Tagline,
+		Runtime:     details.Runtime,
+		// BackdropPath: "https://image.tmdb.org/t/p/w1280" + details.BackdropPath,
+		VoteAvg:      details.VoteAvg,
 	}, nil
 }
 
@@ -266,7 +266,7 @@ func (ms *MovieService) SaveMovie(movie *models.Movie, ctx context.Context) erro
 			"tagline":      movie.Tagline,
 			"release_date": movie.ReleaseDate,
 			"runtime":      movie.Runtime,
-			"backdrop_path": movie.BackdropPath,
+			// "backdrop_path": movie.BackdropPath,
 			"vote_average": movie.VoteAvg,
 		},
 	})
