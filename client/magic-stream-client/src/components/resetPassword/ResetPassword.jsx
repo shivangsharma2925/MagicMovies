@@ -4,6 +4,7 @@ import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
 import axiosConfig from "../../api/axiosConfig";
 import { FormGroup } from "react-bootstrap";
+import "../../styling/LoginRegister.css";
 // import { useNavigate } from "react-router-dom";
 
 const ResetPassword = () => {

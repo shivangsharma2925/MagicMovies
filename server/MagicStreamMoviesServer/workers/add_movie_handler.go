@@ -27,7 +27,7 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 
 	imdbID := payload.ImdbID
 
-	// So that any panic is treated as normal error and retry 
+	// So that any panic is treated as normal error and retry
 	defer func() {
 		if r := recover(); r != nil {
 

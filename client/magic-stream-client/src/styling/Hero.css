@@ -1,0 +1,244 @@
+/* Hero section CSS start */
+
+.hero-section {
+  position: relative;
+  height: 80vh;
+  max-height: 700px;
+  min-height: 480px;
+  overflow: hidden;
+  background: #0b0b0f;
+}
+
+.hero-backdrop {
+  background-image: var(--backdrop);
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center right;
+  transition: opacity 0.4s ease;
+}
+
+.hero-fading {
+  opacity: 0;
+}
+
+.hero-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    /* Strong black on left — this is the main fix */
+    linear-gradient(
+      90deg,
+      #0b0b0f 0%,
+      #0b0b0f 25%,
+      rgba(11, 11, 15, 0.95) 40%,
+      rgba(11, 11, 15, 0.7) 60%,
+      rgba(11, 11, 15, 0.2) 80%,
+      transparent 100%
+    ),
+    /* Dark at bottom so dots are readable */
+    linear-gradient(
+        0deg,
+        rgba(11, 11, 15, 1) 0%,
+        rgba(11, 11, 15, 0.6) 15%,
+        transparent 40%
+      );
+}
+
+.hero-content {
+  position: absolute;
+  bottom: 80px;
+  left: 48px;
+  max-width: 500px;
+  z-index: 2;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 46, 99, 0.15);
+  border: 1px solid rgba(255, 46, 99, 0.35);
+  color: #ff2e63;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
+.hero-title {
+  font-size: 48px !important;
+  font-weight: 800 !important;
+  line-height: 1.05 !important;
+  color: #fff !important;
+  margin-bottom: 12px !important;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
+  letter-spacing: -0.5px !important;
+}
+
+.hero-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.65;
+  margin-bottom: 24px !important;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-hero-play {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 24px;
+  background: #ff2e63;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+
+.btn-hero-play:hover {
+  background: #ff1b55;
+  box-shadow: 0 0 24px rgba(255, 46, 99, 0.45);
+}
+
+.btn-hero-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 17px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.2s;
+}
+
+.btn-hero-icon:hover {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.08);
+}
+
+/* Dots */
+.hero-dots {
+  position: absolute;
+  bottom: 28px;
+  left: 48px;
+  display: flex;
+  gap: 6px;
+  z-index: 2;
+}
+
+.hero-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s;
+}
+
+.hero-dot.active {
+  width: 22px;
+  border-radius: 3px;
+  background: #ff2e63;
+}
+
+/* Progress bar */
+.hero-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  z-index: 2;
+}
+
+.hero-progress-fill {
+  height: 100%;
+  background: #ff2e63;
+  animation: heroProgress 6s linear forwards;
+}
+
+@keyframes heroProgress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-backdrop {
+    background-image: var(--poster);
+  }
+  .hero-content {
+    left: 20px;
+    right: 20px;
+    bottom: 60px;
+    max-width: 100%;
+  }
+  .hero-title {
+    font-size: 28px !important;
+  }
+  .hero-desc {
+    -webkit-line-clamp: 2;
+    line-clamp: 3;
+  }
+  .hero-dots {
+    left: 20px;
+  }
+  .hero-gradient {
+    background:
+      linear-gradient(
+        98deg,
+        #0b0b0f 0%,
+        rgba(11, 11, 15, 0.9) 0%,
+        rgba(11, 11, 15, 0.3) 100%
+      ),
+      linear-gradient(
+        0deg,
+        rgba(11, 11, 15, 1) 0%,
+        rgba(11, 11, 15, 0.5) 20%,
+        transparent 45%
+      );
+  }
+}
+
+@media (max-width: 400px) {
+  .hero-section {
+    height: 65vh;
+  }
+}
+
+/* Hero section CSS end */

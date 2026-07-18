@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -542,6 +543,256 @@ func (mc *MovieController) GetSuggestions(c *gin.Context) {
 	c.JSON(http.StatusOK, movies)
 }
 
+func (mc *MovieController) GetHeroMovies(c *gin.Context) {
+
+	movies := make(map[string][]models.Movie)
+
+	err, excellentMovies := mc.getMoviesByRanking("Excellent", 10)
+	if err != nil {
+		movies["excellent"] = nil
+	} else {
+		movies["excellent"] = excellentMovies
+	}
+
+	err, goodMovies := mc.getMoviesByRanking("Good", 10)
+	if err != nil {
+		movies["good"] = nil
+	} else {
+		movies["good"] = goodMovies
+	}
+
+	err, okayMovies := mc.getMoviesByRanking("Okay", 10)
+	if err != nil {
+		movies["okay"] = nil
+	} else {
+		movies["okay"] = okayMovies
+	}
+
+	err, newMovies := mc.getNewMovies(5, 3)
+	if err != nil {
+		movies["newRelease"] = nil
+	} else {
+		movies["newRelease"] = newMovies
+	}
+
+	err, genres := mc.fetchGenres(c)
+	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "error fetching genres", gin.H{
+			"endpoint": "/GetHeroMovies",
+			"error":    err.Error(),
+		})
+	} else {
+		for _, genre := range genres {
+			err, genreMovies := mc.getMoviesByGenre(genre.GenreName, 10)
+			if err != nil {
+				movies[genre.GenreName] = nil
+			} else {
+				movies[genre.GenreName] = genreMovies
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, movies)
+}
+
+func (mc *MovieController) getMoviesByRanking(ranking string, limit int64) (error, []models.Movie) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	projection := bson.M{
+		"title":         1,
+		"imdb_id":       1,
+		"poster_path":   1,
+		"youtube_id":    1,
+		"overview":      1,
+		"release_date":  1,
+		"runtime":       1,
+		"is_adult":      1,
+		"ranking":       1,
+		"genre":         1,
+		"tagline":       1,
+		"backdrop_path": 1,
+		"vote_average":  1,
+	}
+
+	findOptions := options.Find().SetProjection(projection).SetSort(bson.M{"vote_average": -1})
+
+	var movies []models.Movie
+
+	moviesCollection := mc.db.Collection("movies")
+
+	if limit != 0 {
+		findOptions.SetLimit(limit)
+	}
+
+	cursor, err := moviesCollection.Find(ctx, bson.M{"ranking.ranking_name": ranking}, findOptions)
+	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "error fetching movies", gin.H{
+			"endpoint": "/getMoviesByRanking",
+			"error":    err.Error(),
+		})
+		return err, nil
+	}
+
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &movies); err != nil {
+		mc.dbLogger.Alerts("ERROR", "error decoding movies", gin.H{
+			"endpoint": "/getMoviesByRanking",
+			"error":    err.Error(),
+		})
+		return err, nil
+	}
+
+	return nil, movies
+}
+
+func (mc *MovieController) getNewMovies(limit int64, yearOpts ...int) (error, []models.Movie) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	projection := bson.M{
+		"title":         1,
+		"imdb_id":       1,
+		"poster_path":   1,
+		"youtube_id":    1,
+		"overview":      1,
+		"release_date":  1,
+		"runtime":       1,
+		"is_adult":      1,
+		"ranking":       1,
+		"genre":         1,
+		"tagline":       1,
+		"backdrop_path": 1,
+		"vote_average":  1,
+	}
+
+	findOptions := options.Find().SetProjection(projection).SetSort(bson.M{"vote_average": -1})
+
+	var movies []models.Movie
+
+	moviesCollection := mc.db.Collection("movies")
+
+	if limit != 0 {
+		findOptions.SetLimit(limit)
+	}
+
+	year := 3
+	if len(yearOpts) > 0 {
+		year = yearOpts[0]
+	}
+
+	targetYear := time.Now().Year() - year
+	minDateStr := fmt.Sprintf("%d-01-01", targetYear)
+
+	filter := bson.M{
+		"release_date": bson.M{"$gte": minDateStr},
+	}
+
+	cursor, err := moviesCollection.Find(ctx, filter, findOptions)
+	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "error fetching movies", gin.H{
+			"endpoint": "/getNewMovies",
+			"error":    err.Error(),
+		})
+		return err, nil
+	}
+
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &movies); err != nil {
+		mc.dbLogger.Alerts("ERROR", "error decoding movies", gin.H{
+			"endpoint": "/getNewMovies",
+			"error":    err.Error(),
+		})
+		return err, nil
+	}
+
+	return nil, movies
+}
+
+func (mc *MovieController) getMoviesByGenre(genre string, limit int64) (error, []models.Movie) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	projection := bson.M{
+		"title":         1,
+		"imdb_id":       1,
+		"poster_path":   1,
+		"youtube_id":    1,
+		"overview":      1,
+		"release_date":  1,
+		"runtime":       1,
+		"is_adult":      1,
+		"ranking":       1,
+		"genre":         1,
+		"tagline":       1,
+		"backdrop_path": 1,
+		"vote_average":  1,
+	}
+
+	findOptions := options.Find().SetProjection(projection).SetSort(bson.M{"vote_average": -1})
+
+	var movies []models.Movie
+
+	moviesCollection := mc.db.Collection("movies")
+
+	if limit != 0 {
+		findOptions.SetLimit(limit)
+	}
+
+	cursor, err := moviesCollection.Find(ctx, bson.M{"genre.genre_name": genre}, findOptions)
+	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "error fetching movies", gin.H{
+			"endpoint": "/getMoviesByGenre",
+			"error":    err.Error(),
+		})
+		return err, nil
+	}
+
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &movies); err != nil {
+		mc.dbLogger.Alerts("ERROR", "error decoding movies", gin.H{
+			"endpoint": "/getMoviesByGenre",
+			"error":    err.Error(),
+		})
+		return err, nil
+	}
+
+	return nil, movies
+}
+
+func (mc *MovieController) GetByCategory(c *gin.Context) {
+	title := c.Param("title")
+
+	var movies []models.Movie
+	var err error
+
+	categories := []string{"Excellent", "Good", "Okay"}
+	nonGenreFound := slices.Contains(categories, title)
+
+	if nonGenreFound {
+		err, movies = mc.getMoviesByRanking(title, 0)
+	} else if title == "newRelease" {
+		err, movies = mc.getNewMovies(0)
+	} else {
+		err, movies = mc.getMoviesByGenre(title, 0)
+	}
+
+	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "Error in getting movies by category", gin.H{
+			"endpoint": "/GetByCategory",
+			"Category": title,
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, movies)
+}
+
 func (mc *MovieController) AddMovie(c *gin.Context) {
 
 	role, err := utilities.GetRolefromContect(c)
@@ -986,9 +1237,18 @@ func (mc *MovieController) GetRankings(c *gin.Context) ([]models.Ranking, error)
 }
 
 func (mc *MovieController) GetGenres(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(c, 10*time.Second)
-	defer cancel()
+	var genreNames []models.Genre
 
+	err, genreNames := mc.fetchGenres(c)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, genreNames)
+}
+
+func (mc *MovieController) fetchGenres(ctx context.Context) (error, []models.Genre) {
 	genreCollection := mc.db.Collection("genres")
 
 	var genreNames []models.Genre
@@ -996,11 +1256,10 @@ func (mc *MovieController) GetGenres(c *gin.Context) {
 	cursor, err := genreCollection.Find(ctx, bson.M{})
 	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "Unable to fetch genres", gin.H{
-			"endpoint": "/GetGenres",
+			"endpoint": "/fetchGenres",
 			"error":    err.Error(),
 		})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
-		return
+		return err, nil
 	}
 	defer cursor.Close(ctx)
 
@@ -1009,7 +1268,7 @@ func (mc *MovieController) GetGenres(c *gin.Context) {
 
 		if err := cursor.Decode(&genreName); err != nil {
 			mc.dbLogger.Alerts("WARN", "cursor decode error", gin.H{
-				"endpoint": "/GetGenres",
+				"endpoint": "/fetchGenres",
 				"error":    err.Error(),
 			})
 		}
@@ -1019,14 +1278,13 @@ func (mc *MovieController) GetGenres(c *gin.Context) {
 
 	if err := cursor.Err(); err != nil {
 		mc.dbLogger.Alerts("WARN", "cursor error", gin.H{
-			"endpoint": "/GetGenres",
+			"endpoint": "/fetchGenres",
 			"error":    err.Error(),
 		})
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
-		return
+		return err, nil
 	}
 
-	c.JSON(http.StatusOK, genreNames)
+	return nil, genreNames
 }
 
 func GetGeminiClient(ctx context.Context) (*genai.Client, error) {

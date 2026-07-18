@@ -1,0 +1,463 @@
+/* Navbar related CSS start */
+
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+  display: flex;
+  align-items: center;
+  padding: 0 32px;
+  height: 64px;
+  gap: 16px;
+  background: none;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nb-brand-left {
+  width: 15vw;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nb-brand-mid {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nb-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.nb-brand-name {
+  font-size: 25px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.nb-links {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  justify-content: center;
+}
+
+.menu-nb-links {
+  display: none;
+}
+
+.menu-btn {
+  display: none;
+}
+
+.nb-link {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 20px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  transition:
+    color 0.2s,
+    background 0.2s;
+  white-space: nowrap;
+}
+
+.nb-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.nb-link.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.nb-right {
+  width: 15vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.nb-icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 25px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.nb-icon-btn:hover,
+.nb-icon-btn.active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.nb-avatar-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff2e63, #7928ca);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nb-avatar-btn:hover,
+.nb-avatar-btn.open {
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.nb-dd-wrap {
+  position: relative;
+}
+
+.nb-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #1a1a26;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  min-width: 200px;
+  overflow: hidden;
+  z-index: 1040;
+  animation: ddOpen 0.18s ease;
+}
+
+@keyframes ddOpen {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.nb-dd-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.nb-dd-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff2e63, #7928ca);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.nb-dd-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.nb-dd-sub {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  margin-top: 1px;
+}
+
+.nb-dd-body {
+  padding: 4px 0;
+}
+
+.nb-dd-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.nb-dd-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.nb-dd-item.danger {
+  color: rgba(255, 100, 100, 0.8);
+}
+
+.nb-dd-item.danger:hover {
+  background: rgba(255, 46, 99, 0.1);
+  color: #ff6b8a;
+}
+
+.nb-dd-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+  margin: 4px 0;
+}
+
+.nb-genre-panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #1a1a26;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px;
+  width: 260px;
+  z-index: 1040;
+  animation: ddOpen 0.18s ease;
+}
+
+.nb-panel-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  margin-bottom: 10px !important;
+}
+
+.nb-genre-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.nb-genre-chip {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.nb-genre-chip:hover {
+  background: rgba(255, 46, 99, 0.1);
+  border-color: rgba(255, 46, 99, 0.3);
+  color: #fff;
+}
+
+.nb-genre-chip.selected {
+  background: rgba(255, 46, 99, 0.15);
+  border-color: rgba(255, 46, 99, 0.45);
+  color: #ff2e63;
+}
+
+.menu-icon {
+  display: none;
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 25px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+@media (max-width: 1000px) {
+  .nb-brand-left {
+    width: 17vw;
+  }
+}
+
+@media (max-width: 890px) {
+  .nb-brand-left {
+    width: 23vw;
+  }
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .app-navbar {
+    padding: 0 16px;
+  }
+
+  .nb-brand-mid {
+    display: flex;
+  }
+
+  .nb-brand-left {
+    display: none;
+  }
+
+  .menu-btn {
+    display: flex;
+    width: 18vw;
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    background-color: transparent;
+    padding: 7px 10px 9px 10px;
+    font-size: 22px;
+    border: none;
+    font-weight: 500;
+    color: rgb(255, 255, 255);
+    text-decoration: none;
+    transition:
+      color 0.2s,
+      background 0.2s;
+  }
+
+  .menu-btn:hover,
+  .menu-btn.active {
+    color: white;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.09);
+  }
+
+  .menu-nb-links {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+    flex-direction: column !important;
+    gap: 2px;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 10px;
+    background: #1a1a26;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    min-width: 150px;
+    overflow: hidden;
+    z-index: 1040;
+    animation: ddOpen 0.18s ease;
+  }
+
+  .rotate-x-180 {
+    transform: rotateX(180deg);
+  }
+
+  .nb-links {
+    display: none;
+  }
+
+  .nb-brand-name {
+    font-size: 22px;
+  }
+
+  .nb-right {
+    width: 20vw;
+  }
+
+  .nb-icon-btn {
+    font-size: 18px;
+  }
+
+  .nb-avatar-btn {
+    width: 33px;
+    height: 33px;
+    margin-left: 8px;
+  }
+}
+
+@media (max-width: 630px) {
+  .nb-right {
+    width: auto;
+    gap: 3px;
+  }
+}
+
+@media (max-width: 460px) {
+  .nb-brand-name {
+    display: none;
+  }
+
+  .nb-icon-btn {
+    width: 33px;
+  }
+
+  .nb-logo {
+    width: 39px;
+    height: 45px;
+  }
+
+  .menu-btn {
+    display: none;
+  }
+
+  .nb-genre-panel {
+    width: 170px;
+  }
+
+  .menu-icon {
+    display: flex;
+  }
+
+  .nb-link {
+    font-size: 13px;
+  }
+
+  .nb-dd-header {
+    padding: 8px 8px;
+  }
+
+  .nb-dropdown {
+    min-width: 170px;
+  }
+}
+
+/* Navbar related CSS end */
+
+/* =================================================================
+================================================================= */

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Modal } from "react-bootstrap";
 import useAxiosPrivate from "../hook/UseAxiosPrivate";
+import "../styling/AI_related.css";
 
 const AskAiBtn = ({ onUseIds }) => {
   const EXAMPLES = [

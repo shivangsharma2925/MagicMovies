@@ -4,6 +4,7 @@ import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import UseWebSocket from "../../hook/UseWebSocket";
 import AskAiBtn from "../../utils/AskAiModal";
+import "../../styling/AddMovie.css";
 const JOBS_PER_PAGE = 8;
 
 const JobRow = React.memo(({ job, retryMutation }) => {

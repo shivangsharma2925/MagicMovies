@@ -1,5 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Form } from "react-bootstrap";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import Movies from "../movies/Movies";
 import Spinner from "../../utils/Spinner";
@@ -31,8 +33,8 @@ const Recommended = () => {
   const filteredMovies = useMemo(() => {
     if (!search.trim()) return movies;
 
-    return movies.filter(movie =>
-      movie.title.toLowerCase().includes(search.toLowerCase())
+    return movies.filter((movie) =>
+      movie.title.toLowerCase().includes(search.toLowerCase()),
     );
   }, [movies, search]);
 
@@ -48,18 +50,21 @@ const Recommended = () => {
   return (
     <>
       <div className="recommended-search-wrap">
-        <span className="search-field-icon" aria-hidden="true">&#128269;</span>
-          <Form.Control
-            type="text"
-            placeholder="Search in Recommended movies..."
-            value={search}
-            className="search-field"
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <FontAwesomeIcon icon={faMagnifyingGlass} className="nb-search-icon" />
+
+        <Form.Control
+          type="text"
+          placeholder="Search in Recommended movies..."
+          value={search}
+          className="search-field"
+          onChange={(e) => setSearch(e.target.value)}
+        />
       </div>
 
       {loading ? (
-        <h2><Spinner /></h2>
+        <h2>
+          <Spinner />
+        </h2>
       ) : (
         <Movies movies={filteredMovies} message={message} />
       )}

@@ -29,6 +29,7 @@ func SetupRoutes(
 	movieController := controllers.NewMovieController(db, dbLogger)
 	userController := controllers.NewUserController(db, dbLogger, OtpService)
 	jobController := controllers.NewJobController(db, dbLogger)
+	watchListController := controllers.NewWatchListController(db, dbLogger)
 
 	// Worker Server
 	go workers.StartWorkerServer(movieServices, jobServices, redisOpt)
@@ -60,7 +61,12 @@ func SetupRoutes(
 
 	api.GET("/movies", ipLimiter.IPMiddleware(), movieController.GetMovies)
 	api.GET("/genres", ipLimiter.IPMiddleware(), movieController.GetGenres)
-	api.GET("/movies/suggestions", movieController.GetSuggestions)
+	api.GET("/movies/suggestions", ipLimiter.IPMiddleware(), movieController.GetSuggestions)
+	api.GET("/movies/heroMovies", ipLimiter.IPMiddleware(), movieController.GetHeroMovies)
+	api.GET("/movie/:imdb_id", ipLimiter.IPMiddleware(), movieController.GetMovie)
+	api.GET("/category/:title", ipLimiter.IPMiddleware(), movieController.GetByCategory)
+
+	api.GET("/UpdateMovies", ipLimiter.IPMiddleware(), movieServices.UpdateMovies)
 
 	// Protected routes
 	protected := api.Group("/")
@@ -68,8 +74,8 @@ func SetupRoutes(
 	protected.Use(userLimiter.UserMiddleware())
 	{
 		protected.GET("/profile/me", userController.GetProfile)
+		protected.POST("/delete-account", userController.DeleteAccount)
 
-		protected.GET("/movie/:imdb_id", movieController.GetMovie)
 		protected.POST("/addmovie", movieController.AddMovie)
 		protected.GET("/recommendedmovies", movieController.GetRecommendedMovies)
 		protected.POST("/updatereview/:imdb_id", movieController.AdminReviewUpdate)
@@ -77,5 +83,14 @@ func SetupRoutes(
 		protected.GET("/jobs", jobController.GetJobs)
 		protected.POST("/jobs/retry/:imdb_id", jobController.RetryJob)
 		protected.POST("/ai/imdb", jobController.AskAiImdb)
+
+		protected.GET("/watchlists", watchListController.GetWatchLists)
+		protected.POST("/watchlists", watchListController.NewWatchList)
+		protected.DELETE("/watchlists/:watchlist_id", watchListController.DeleteWatchList)
+		protected.POST("/watchlists/:watchlist_id", watchListController.RenameWatchLists)
+		protected.POST("/watchlists/:watchlist_id/movies", watchListController.AddMovietoWatchList)
+		protected.DELETE("/watchlists/:watchlist_id/movies/:movie_id", watchListController.DeleteMoviefromWatchList)
+		protected.POST("/watchlists/:watchlist_id/movies/:movie_id", watchListController.ToggleWatch)
+
 	}
 }

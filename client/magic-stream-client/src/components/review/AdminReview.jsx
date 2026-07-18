@@ -6,6 +6,7 @@ import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import UseAuth from "../../hook/UseAuth";
 import Movie from "../movie/Movie";
 import Spinner from "../../utils/Spinner";
+import "../../styling/AdminReview.css";
 
 const Review = () => {
   const [movie, setMovie] = useState({});
@@ -82,7 +83,7 @@ const Review = () => {
 
             <div className="review-movie-meta">
               <h5 className="review-movie-title">{movie.title}</h5>
-              <span className="review-movie-imdb">{movie.imdb_id}</span>
+              <span className="review-movie-imdb"> IMDB-ID: <b>{movie.imdb_id}</b></span>
             </div>
           </div>
 

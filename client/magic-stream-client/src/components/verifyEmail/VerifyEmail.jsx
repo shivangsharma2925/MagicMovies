@@ -5,6 +5,7 @@ import ResendOTP from "./ResendOTP";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
+import "../../styling/LoginRegister.css";
 
 export default function VerifyEmail() {
   const { userId } = useParams();

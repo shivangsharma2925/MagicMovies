@@ -8,23 +8,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/database"
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/models"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/utilities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MovieService struct {
-	db       *database.MongoDB
+	Db       *database.MongoDB
 	DbLogger *dblogger.DBLogger
 	genreMap map[string]models.Genre
 }
 
 func NewMovieService(db *database.MongoDB, logger *dblogger.DBLogger) *MovieService {
 	ms := &MovieService{
-		db:       db,
+		Db:       db,
 		DbLogger: logger,
 		genreMap: make(map[string]models.Genre),
 	}
@@ -48,7 +50,7 @@ func (ms *MovieService) loadGenres() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	collection := ms.db.Collection("genres")
+	collection := ms.Db.Collection("genres")
 
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
@@ -78,14 +80,15 @@ func (ms *MovieService) loadGenres() error {
 func (ms *MovieService) ProcessMovie(imdbID string, ctx context.Context) error {
 
 	// 1. Check duplicate
-	exists, err := ms.MovieExists(imdbID, ctx)
-	if err != nil {
-		return err
-	}
+	// removed temporarily
+	// exists, err := ms.MovieExists(imdbID, ctx)
+	// if err != nil {
+	// 	return err
+	// }
 
-	if exists {
-		return nil
-	}
+	// if exists {
+	// 	return nil
+	// }
 
 	// 2. Fetch data
 	movieData, err := ms.FetchMovieData(imdbID, ctx)
@@ -102,7 +105,7 @@ func (ms *MovieService) ProcessMovie(imdbID string, ctx context.Context) error {
 
 func (ms *MovieService) MovieExists(id string, ctx context.Context) (bool, error) {
 
-	moviesCollection := ms.db.Collection("movies")
+	moviesCollection := ms.Db.Collection("movies")
 
 	err := moviesCollection.FindOne(ctx, bson.M{"imdb_id": id}).Err()
 
@@ -134,29 +137,38 @@ func (ms *MovieService) FetchMovieData(imdbID string, ctx context.Context) (*mod
 		return nil, err
 	}
 
-	youtubeID, trailerErr := ms.getTrailer(tmdbID, ctx) // optional failure
+	// removed temporarily
+	// youtubeID, trailerErr := ms.getTrailer(tmdbID, ctx) // optional failure
 
-	if youtubeID == "" || trailerErr != nil {
-		errMsg := ""
-		if trailerErr != nil {
-			errMsg = trailerErr.Error()
-		}
+	// if youtubeID == "" || trailerErr != nil {
+	// 	errMsg := ""
+	// 	if trailerErr != nil {
+	// 		errMsg = trailerErr.Error()
+	// 	}
 
-		ms.DbLogger.Alerts("WARN", "No trailer Info found", map[string]any{
-			"endpoint": "/FetchMovieData",
-			"Imdb_ID":  imdbID,
-			"Tmdb_id":  tmdbID,
-			"error":    errMsg,
-		})
-	}
+	// 	ms.DbLogger.Alerts("WARN", "No trailer Info found", map[string]any{
+	// 		"endpoint": "/FetchMovieData",
+	// 		"Imdb_ID":  imdbID,
+	// 		"Tmdb_id":  tmdbID,
+	// 		"error":    errMsg,
+	// 	})
+	// }
 
 	return &models.MovieData{
-		ImdbID:    imdbID,
-		Title:     details.Title,
-		Poster:    "https://image.tmdb.org/t/p/w300" + details.PosterPath,
-		Genres:    utilities.MapGenres(details.Genres, ms.genreMap),
-		YoutubeID: youtubeID,
-		Ranking:   utilities.GetRanking(details.Rating),
+		// removed temporarily
+		ImdbID: imdbID,
+		// Title:       details.Title,
+		// Poster:      "https://image.tmdb.org/t/p/w300" + details.PosterPath,
+		// Genres:      utilities.MapGenres(details.Genres, ms.genreMap),
+		// YoutubeID:   youtubeID,
+		// Ranking:     utilities.GetRanking(details.Rating),
+		// IsAdult:     details.IsAdult,
+		// Overview:    details.Overview,
+		// ReleaseDate: details.ReleaseDate,
+		// Tagline:     details.Tagline,
+		// Runtime:     details.Runtime,
+		BackdropPath: "https://image.tmdb.org/t/p/w1280" + details.BackdropPath,
+		// VoteAvg:      details.VoteAvg,
 	}, nil
 }
 
@@ -244,9 +256,20 @@ func (ms *MovieService) SaveMovie(movie *models.Movie, ctx context.Context) erro
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	collection := ms.db.Collection("movies")
+	collection := ms.Db.Collection("movies")
 
-	_, err := collection.InsertOne(ctx, movie)
+	// _, err := collection.InsertOne(ctx, movie)
+	_, err := collection.UpdateOne(ctx, bson.M{"imdb_id": movie.ImdbID}, bson.M{
+		"$set": bson.M{
+			"is_adult":     movie.IsAdult,
+			"overview":     movie.Overview,
+			"tagline":      movie.Tagline,
+			"release_date": movie.ReleaseDate,
+			"runtime":      movie.Runtime,
+			"backdrop_path": movie.BackdropPath,
+			"vote_average": movie.VoteAvg,
+		},
+	})
 	if err != nil {
 
 		if mongo.IsDuplicateKeyError(err) {
@@ -262,4 +285,44 @@ func (ms *MovieService) SaveMovie(movie *models.Movie, ctx context.Context) erro
 	}
 
 	return nil
+}
+
+func (ms *MovieService) UpdateMovies(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c, 50*time.Second)
+	defer cancel()
+
+	moviecollection := ms.Db.Collection("movies")
+
+	opts := options.Find().SetProjection(bson.M{
+		"_id":     0,
+		"imdb_id": 1,
+	})
+
+	type moviesidstruct struct {
+		ImdbId string `bson:"imdb_id"`
+	}
+
+	var moviesid []moviesidstruct
+
+	cursor, err := moviecollection.Find(ctx, bson.M{}, opts)
+	if err != nil {
+		return
+	}
+	defer cursor.Close(ctx)
+
+	if err = cursor.All(ctx, &moviesid); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	for _, id := range moviesid {
+		err := ms.ProcessMovie(id.ImdbId, ctx)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "imdb_id": id.ImdbId})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": " all done"})
+
 }

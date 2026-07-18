@@ -5,6 +5,7 @@ import Form from "react-bootstrap/Form";
 import axiosConfig from "../../api/axiosConfig";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../../logo.png";
+import "../../styling/LoginRegister.css";
 //  /MagicStreamLogo.png';
 
 const Register = () => {
@@ -218,7 +219,7 @@ const Register = () => {
                   <Form.Label>Admin Password</Form.Label>
                   <Form.Control
                     type="password"
-                    placeholder="Adim Password"
+                    placeholder="Admin Password"
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     className="login-input"

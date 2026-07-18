@@ -14,7 +14,7 @@ const StreamMovie = () => {
   
   return (
     <div style={styles.playerContainer}>
-      {key != "null" && key != null ? (
+      {key != "null" && key != null && key !== ""? (
         <Player
           controls={true}
           playing={true}

@@ -6,6 +6,7 @@ import axiosConfig from "../../api/axiosConfig";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import UseAuth from "../../hook/UseAuth";
 import logo from "../../../logo.png";
+import "../../styling/LoginRegister.css";
 
 const Login = () => {
   const [email, setEmail] = useState("");

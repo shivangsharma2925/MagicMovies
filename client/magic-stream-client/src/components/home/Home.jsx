@@ -1,34 +1,25 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Movies from "../movies/Movies";
 import { Button } from "react-bootstrap";
 import Spinner from "../../utils/Spinner";
-import { useNavigate } from "react-router-dom";
-import {
-  useInfiniteQuery,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import UseWebSocket from "../../hook/UseWebSocket";
-import useDebounce from "../../hook/UseDebounce";
-import { fetchMovies, fetchMovieSuggestions } from "./GetMovieServices";
+import { fetchMovies, getHeroMovies } from "./GetMovieServices";
 import useInfiniteScroll from "../../hook/UseInfiniteScroll";
 import SearchBar from "./SearchBar";
+import {Carousel} from "../movieCarousel/Carousel";
+import MovieCarousel from "../movieCarousel/MovieCarousel";
+import HeroSection from "../heroSection/HeroSection"
+import "../../styling/Home.css";
 
 const Home = () => {
-  const [search, setSearch] = useState("");
   const [hasNewMovies, setHasNewMovies] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const socket = UseWebSocket();
 
   let message = "";
-
-  const debouncedSearch = useDebounce(search, 500);
-
-  const trimmedSearch = debouncedSearch.trim();
 
   /*
     The data in the react query movies array is stored as an set of all the pages we have ordered so far from server,
@@ -63,10 +54,10 @@ const Home = () => {
     isLoading,
     error,
   } = useInfiniteQuery({
-    queryKey: ["movies", trimmedSearch],
+    queryKey: ["movies"],
 
     queryFn: ({ pageParam = "" }) =>
-      fetchMovies({ search: trimmedSearch, pageParam }),
+      fetchMovies({pageParam }),
 
     initialPageParam: "",
 
@@ -76,20 +67,19 @@ const Home = () => {
 
     placeholderData: (prev) => prev,
 
-    enabled: trimmedSearch.length === 0 || trimmedSearch.length >= 2,
-
     staleTime: 1000 * 60 * 5,
   });
 
-  const { data: suggestions = [] } = useQuery({
-    queryKey: ["movie-suggestions", trimmedSearch],
+  /* fetching hero movies */
+  const {
+    data: heroMovies,
+  } = useQuery({
+    queryKey: ["heroMovies"],
 
-    queryFn: () => fetchMovieSuggestions(trimmedSearch),
+    queryFn: () => getHeroMovies(),
 
-    enabled: trimmedSearch.trim().length >= 2,
-
-    staleTime: 1000 * 60 * 10,
-  });
+    staleTime: 1000 * 60 * 5,
+  })
 
   const observerRef = useInfiniteScroll(fetchNextPage, hasNextPage);
 
@@ -115,13 +105,18 @@ const Home = () => {
   const allMovies = movies?.pages?.flatMap((page) => page.movies ?? []) ?? [];
 
   if (allMovies == null || allMovies.length === 0) {
-    message = `There are currently no movies available ${trimmedSearch ? "for the provided search" : ""}`;
+    message = `There are currently no movies available`;
   }
 
   if (error) {
     console.log(error);
     message = "Error fetching movies";
   }
+  
+  // get carousels movies
+  const carousels = React.useMemo(()=>{
+    return Carousel({ heroMovies });
+  }, [heroMovies]) 
 
   return (
     <>
@@ -134,11 +129,6 @@ const Home = () => {
                 queryKey: ["movies"],
               });
 
-              window.scrollTo({
-                top: 0,
-                behavior: "smooth",
-              });
-
               setHasNewMovies(false);
             }}
           >
@@ -147,48 +137,20 @@ const Home = () => {
           </button>
         </div>
       )}
-      <div
-        className="home-sticky-bar sticky-top pt-3 pb-3"
-        style={{ top: "var(--navbar-h, 54px)", zIndex: 1020 }}
-      >
-        <div className="container-fluid d-flex align-items-center gap-3">
-          {/* <div style={{ flex: 1 }}></div> */}
 
-          <div style={{ flex: 1 }}>
-            
-            <SearchBar
-              search={search}
-              setSearch={setSearch}
-              suggestions={suggestions}
-              onSuggestionClick={(title) => {
-                setSearch(title);
-                setShowSuggestions(false);
-              }}
-              showSuggestions={showSuggestions}
-              setShowSuggestions={setShowSuggestions}
-            />
-            
-          </div>
-
-          <div style={{ lexShrink: 0 , textAlign: "right" }}>
-            <Button
-              variant="primary"
-              size="sm"
-              className="btn-add-movie"
-              onClick={() => navigate("admin/add-movie")}
-            >
-              <span className="btn-add-full">+ Add Movie</span>
-              <span className="btn-add-short">+ Movie</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4">
+      <div className="">
         {isLoading ? (
           <Spinner />
         ) : (
           <>
+            <HeroSection movies={heroMovies} />
+
+            <div className="carousels-container">
+              {carousels.map((carousel) => 
+                <MovieCarousel key={carousel.title} section={carousel.section} title={carousel.title} movies={carousel.movies}></MovieCarousel>
+              )}
+            </div>
+
             <Movies movies={allMovies} message={message} />
 
             {isFetchingNextPage && <Spinner />}

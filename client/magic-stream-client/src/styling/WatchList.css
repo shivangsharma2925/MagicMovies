@@ -1,0 +1,1242 @@
+/* watchlist page start */
+
+.wl-empty-page {
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background-image: radial-gradient(
+    ellipse 70% 50% at 50% 0%,
+    rgba(255, 46, 99, 0.07) 0%,
+    transparent 60%
+  );
+}
+
+.wl-empty-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 48px 36px;
+  text-align: center;
+  border-radius: 20px;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.wl-empty-icon-ring {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 46, 99, 0.1);
+  border: 1px solid rgba(255, 46, 99, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  font-size: 30px;
+  color: #ff2e63;
+}
+
+.wl-loading {
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  padding: 36px 0;
+}
+
+.wl-empty-title {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  margin: 0 0 10px !important;
+}
+
+.wl-empty-desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.65;
+  max-width: 300px;
+  margin: 0 auto 32px !important;
+}
+
+.wl-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.wl-step {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.wl-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 46, 99, 0.15);
+  border: 1px solid rgba(255, 46, 99, 0.25);
+  color: #ff2e63;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wl-step-icon {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.wl-step-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  line-height: 1.3;
+  text-align: center;
+}
+
+.wl-empty-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 28px;
+  background: #ff2e63;
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    background 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.wl-empty-create-btn:hover {
+  background: #ff1b55;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255, 46, 99, 0.3);
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .wl-empty-card {
+    padding: 36px 20px;
+  }
+  .wl-empty-title {
+    font-size: 20px !important;
+  }
+  .wl-steps {
+    gap: 8px;
+  }
+  .wl-step {
+    padding: 12px 8px;
+  }
+}
+
+/* watchlist page end  */
+
+/*=========================================================================================
+===========================================================================================
+=========================================================================================*/
+
+/* Create Watchlist Modal start */
+
+.wl-modal-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background:
+    radial-gradient(
+      ellipse 70% 50% at 50% 0%,
+      rgba(255, 46, 99, 0.14) 0%,
+      transparent 60%
+    ),
+    rgba(3, 4, 10, 0.74);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.wl-modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  border-radius: 22px;
+  background: #12121a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.55);
+  padding: 24px;
+}
+
+.wl-create-modal {
+  max-width: 460px;
+}
+
+.wl-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.wl-modal-title {
+  display: block;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.wl-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.55);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.2s;
+}
+
+.wl-close-btn:hover {
+  background: rgba(255, 46, 99, 0.14);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.wl-create-hero {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.wl-empty-icon-ring.small {
+  width: 70px;
+  height: 70px;
+  font-size: 26px;
+  margin-bottom: 18px;
+}
+
+.wl-create-hero h2 {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.wl-create-hero p {
+  max-width: 320px;
+  margin: 0 auto;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.wl-create-form-card {
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 18px;
+}
+
+.wl-create-label {
+  display: block;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.wl-create-input {
+  width: 100%;
+  margin-bottom: 15px;
+  min-height: 46px;
+  border-radius: 14px;
+  outline: none;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(0, 0, 0, 0.18);
+  color: #fff;
+  padding: 0 14px;
+  font-size: 14px;
+  font-family: inherit;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+.wl-create-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.wl-create-input:focus {
+  border-color: rgba(255, 46, 99, 0.58);
+  box-shadow: 0 0 0 4px rgba(255, 46, 99, 0.1);
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.wl-form-error {
+  color: #ff6b8a;
+  font-size: 12px;
+}
+
+.wl-create-submit:disabled {
+  cursor: not-allowed;
+}
+
+.wl-create-submit {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 999px;
+  background: #ff2e63;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition:
+    background 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.wl-create-submit:hover {
+  background: #ff1b55;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(255, 46, 99, 0.3);
+}
+
+/* Mobile */
+@media (max-width: 560px) {
+  .wl-modal-bg {
+    padding: 14px;
+  }
+
+  .wl-modal {
+    padding: 20px;
+    border-radius: 18px;
+  }
+
+  .wl-modal-title {
+    font-size: 18px;
+  }
+}
+
+/* Create Watchlist Modal end */
+
+/*=========================================================================================
+===========================================================================================
+=========================================================================================*/
+
+/* When Watchlists are present CSS start */
+
+.wlp-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 50px 64px;
+  background-color: #111;
+  border-radius: 20px;
+  margin-top: 40px;
+}
+
+/* ── Header ── */
+.wlp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.wlp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wlp-header-icon {
+  color: #ff2e63;
+  font-size: 30px;
+}
+
+.wlp-header-title {
+  font-size: 30px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.wlp-header-movie {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+  font-style: italic;
+}
+
+.wlp-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: black 0px solid;
+  padding: 9px 18px;
+  background: #ff2e63d6;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.wlp-new-btn:hover {
+  background: rgb(255 46 99);
+}
+
+/* ── Create input ── */
+.wlp-create-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.wlp-create-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 18px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.wlp-create-input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.07);
+}
+.wlp-create-input::placeholder {
+  color: rgba(255, 255, 255, 0.22);
+}
+
+/* ── Small buttons (shared) ── */
+.wlp-btn-sm {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.wlp-btn-sm:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+.wlp-btn-sm.accent {
+  background: #fff;
+  border-color: #fff;
+  color: #111;
+  font-weight: 600;
+}
+.wlp-btn-sm.accent:hover {
+  background: rgba(255, 255, 255, 0.88);
+}
+.wlp-btn-sm.danger {
+  border-color: rgba(255, 46, 99, 0.35);
+  color: #ff6b8a;
+  background: rgba(255, 46, 99, 0.08);
+}
+.wlp-btn-sm.danger:hover {
+  background: rgba(255, 46, 99, 0.16);
+}
+.wlp-btn-sm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Empty state ── */
+.wlp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 52px 24px;
+  text-align: center;
+  border: 1.5px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.wlp-empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 46, 99, 0.1);
+  border: 1px solid rgba(255, 46, 99, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #ff2e63;
+  margin-bottom: 4px;
+}
+
+.wlp-empty p {
+  font-size: 15px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 !important;
+}
+
+.wlp-empty span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Delete confirm ── */
+.wlp-delete-confirm {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255, 46, 99, 0.07);
+  border: 1px solid rgba(255, 46, 99, 0.18);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.wlp-delete-confirm > span {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.wlp-delete-btns {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Accordions ── */
+.wlp-accordions {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.wlp-accordion {
+  border-radius: 12px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.wlp-accordion:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.wlp-accordion.has-movie {
+  border-color: rgba(255, 46, 99, 0.2);
+  background: rgba(255, 46, 99, 0.03);
+}
+
+/* ── Accordion header ── */
+.wlp-acc-header {
+  display: flex;
+  align-items: center;
+  min-height: 60px;
+  padding: 0 12px 0 0;
+}
+
+.wlp-action-error-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Toggle button takes all left space */
+.wlp-acc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 1;
+  min-width: 0;
+  padding: 12px 0 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+
+.wlp-acc-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.wlp-acc-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wlp-acc-name {
+  font-size: 18px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.wlp-acc-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.wlp-in-list-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ff2e63;
+  flex-shrink: 0;
+}
+
+.wlp-chevron {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.3);
+  transition: transform 0.35s;
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+.wlp-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* ── Accordion right actions ── */
+.wlp-acc-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+.wlp-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.wlp-action-btn.add {
+  background: rgba(255, 46, 99, 0.1);
+  border: 1.5px solid rgba(255, 46, 99, 0.3);
+  color: #ff2e63;
+}
+.wlp-action-btn.add:hover {
+  background: rgba(255, 46, 99, 0.18);
+  border-color: rgba(255, 46, 99, 0.5);
+}
+
+.wlp-action-btn.remove {
+  background: rgba(33, 230, 160, 0.08);
+  border: 1.5px solid rgba(33, 230, 160, 0.25);
+  color: #21e6a0;
+}
+.wlp-action-btn.remove:hover {
+  background: rgba(255, 46, 99, 0.08);
+  border-color: rgba(255, 46, 99, 0.3);
+  color: #ff6b8a;
+}
+
+/* ── Icon buttons ── */
+.wlp-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.wlp-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+.wlp-icon-btn.watched {
+  color: #21e6a0;
+  border-color: rgba(33, 230, 160, 0.35);
+  background: rgba(33, 230, 160, 0.07);
+}
+.wlp-icon-btn.watched:hover {
+  background: rgba(33, 230, 160, 0.14);
+  border-color: rgba(33, 230, 160, 0.5);
+}
+.wlp-icon-btn.warning:hover {
+  background: rgba(255, 46, 99, 0.1);
+  border-color: rgba(234, 255, 46, 0.35);
+  color: #f8ff6b;
+}
+.wlp-icon-btn.danger:hover {
+  background: rgba(255, 46, 99, 0.1);
+  border-color: rgba(255, 46, 99, 0.35);
+  color: #ff6b8a;
+}
+
+/* ── Rename row ── */
+.wlp-rename-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  padding: 12px 8px 12px 14px;
+}
+
+.wlp-rename-input {
+  flex: 1;
+  height: 38px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 7px;
+  color: #fff;
+  font-size: 17px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.wlp-rename-input:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* ── Accordion body ── */
+
+.wlp-acc-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+
+  transition:
+    grid-template-rows 0.35s ease,
+    opacity 0.25s ease,
+    transform 0.35s ease,
+    visibility 0s linear 0.35s;
+}
+
+.wlp-acc-panel.open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+
+  transition:
+    grid-template-rows 0.35s ease,
+    opacity 0.25s ease 0.05s,
+    transform 0.35s ease,
+    visibility 0s linear 0s;
+}
+
+.wlp-acc-panel-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wlp-acc-body {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wlp-acc-empty {
+  padding: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: rgb(255 255 255 / 56%);
+}
+
+/* ── Movie rows ── */
+.wlp-movie-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.12s;
+}
+.wlp-movie-row:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+.wlp-movie-row.current {
+  background: rgba(255, 46, 99, 0.06);
+  border-color: rgba(255, 46, 99, 0.15);
+}
+
+.wlp-movie-thumb {
+  width: 34px;
+  height: 48px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}
+.wlp-movie-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.wlp-movie-thumb:hover {
+  cursor: pointer;
+}
+
+.wlp-movie-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wlp-movie-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wlp-movie-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.wlp-watched-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #21e6a0;
+  background: rgba(33, 230, 160, 0.08);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* ── Loading ── */
+.wlp-loading {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.3);
+  text-align: center;
+  padding: 32px 0;
+}
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  .wlp-wrap {
+    max-width: 500px;
+    padding: 24px 16px 48px;
+  }
+  .wlp-acc-toggle {
+    padding: 10px 0 10px 12px;
+    gap: 10px;
+  }
+  .wlp-acc-actions {
+    gap: 4px;
+  }
+  .wlp-action-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+  .wlp-icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+  .wlp-header-title {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 460px) {
+  .wlp-header-icon {
+    font-size: 24px;
+  }
+
+  .wlp-new-btn {
+    font-size: 10px;
+  }
+
+  .wlp-acc-toggle {
+    padding: 3px 0 3px 8px;
+  }
+
+  .wlp-wrap {
+    max-width: 400px;
+  }
+
+  .wlp-create-input {
+    font-size: 14px;
+    height: 34px;
+    padding: 0 7px;
+  }
+
+  .wlp-btn-sm {
+    padding: 0px 8px;
+    font-size: 2.5vw;
+  }
+
+  .wlp-acc-header {
+    padding: 0 6px 0 0;
+  }
+
+  .wlp-rename-row {
+    padding: 12px 1px 12px 8px;
+  }
+
+  .wlp-rename-input {
+    padding: 0 4px;
+    height: 35px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  .wlp-wrap {
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 300px) {
+  .wlp-wrap {
+    padding: 24px 8px 45px;
+  }
+
+  .wlp-rename-input {
+    font-size: 11px;
+  }
+
+  .wlp-create-input {
+    font-size: 11px;
+  }
+}
+
+/* When Watchlists are present CSS end */
+
+/*=========================================================================================
+===========================================================================================
+=========================================================================================*/
+
+/* WatchList Picker CSS start */
+
+.atw-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.atw-modal {
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 380px;
+  padding: 20px;
+  animation: atwIn 0.18s ease;
+}
+
+@keyframes atwIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.atw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.atw-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.atw-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.atw-close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.atw-movie-name {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.38);
+  font-style: italic;
+  margin-bottom: 16px !important;
+}
+
+.atw-loading {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.35);
+  padding: 24px 0;
+}
+
+/* List of watchlists */
+.atw-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.atw-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.atw-item:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.atw-item.checked {
+  border-color: rgba(255, 46, 99, 0.3);
+  background: rgba(255, 46, 99, 0.05);
+}
+
+.atw-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.atw-item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.atw-item-count {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.32);
+  flex-shrink: 0;
+}
+
+.atw-checkbox {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: transparent;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.atw-checkbox.checked {
+  background: #ff2e63;
+  border-color: #ff2e63;
+  color: #fff;
+}
+
+/* Empty state — redirect prompt */
+.atw-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 12px;
+  text-align: center;
+}
+
+.atw-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 46, 99, 0.1);
+  border: 1px solid rgba(255, 46, 99, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #ff2e63;
+  margin-bottom: 4px;
+}
+
+.atw-empty p {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0 !important;
+}
+
+.atw-empty span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.28);
+  margin-bottom: 12px;
+}
+
+.atw-goto-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  background: #ff2e63;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s;
+}
+.atw-goto-btn:hover {
+  background: #ff1b55;
+}
+
+/* Manage link */
+.atw-manage-link {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: transparent;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+.atw-manage-link:hover {
+  color: #ff2e63;
+}
+
+/* WatchList Picker CSS end */
+
+/*=========================================================================================
+===========================================================================================
+=========================================================================================*/

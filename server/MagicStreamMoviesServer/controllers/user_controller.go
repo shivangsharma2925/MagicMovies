@@ -19,6 +19,7 @@ import (
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/utilities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -331,6 +332,148 @@ func (uc *UserController) LogoutHandler(c *gin.Context) {
 	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out successfully"})
+}
+
+func (uc *UserController) DeleteAccount(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c, 10*time.Second)
+	defer cancel()
+
+	var req struct {
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid request",
+		})
+		return
+	}
+
+	if strings.TrimSpace(req.Password) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Password is required",
+		})
+		return
+	}
+
+	userId, err := utilities.GetUserIdfromContext(c)
+	if err != nil {
+		uc.dbLogger.Alerts("ACCOUNT", "Unable to fetch userId from context", gin.H{
+			"endpoint": "/DeleteAccount",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Something went wrong!",
+		})
+		return
+	}
+
+	var user models.User
+
+	usercollection := uc.db.Collection("users")
+
+	err = usercollection.FindOne(ctx, bson.M{"user_id": userId}, options.FindOne().SetProjection(bson.M{"password": 1, "_id": 0})).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Invalid credentials",
+			})
+			return
+		}
+
+		uc.dbLogger.Alerts("ACCOUNT", "Unable to fetch user for account deletion", gin.H{
+			"endpoint": "/DeleteAccount",
+			"user_id":  userId,
+			"error":    err.Error(),
+		},
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Something went wrong!",
+		})
+		return
+	}
+
+	err = utilities.ComparePassword(user.Password, req.Password)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Invalid credentials"})
+		return
+	}
+
+	watchlistCollection := uc.db.Collection("watchlist")
+
+	// Delete all watchlists owned by the user.
+	_, err = watchlistCollection.DeleteMany(ctx, bson.M{"user_id": userId})
+	if err != nil {
+		uc.dbLogger.Alerts("ACCOUNT", "Unable to delete user watchlists", gin.H{
+			"endpoint": "/DeleteAccount",
+			"user_id":  userId,
+			"error":    err.Error(),
+		},
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Unable to delete account data",
+		})
+		return
+	}
+
+	// Delete the user record last.
+	result, err := usercollection.DeleteOne(ctx, bson.M{"user_id": userId})
+	if err != nil {
+		uc.dbLogger.Alerts("ACCOUNT", "Unable to delete user account",
+			gin.H{"endpoint": "/DeleteAccount",
+				"user_id": userId,
+				"error":   err.Error(),
+			},
+		)
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Unable to delete account",
+		})
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "User account not found",
+		})
+		return
+	}
+
+	// Remove refresh and access token cookie.
+	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+
+	c.SetCookie("access_token", "", -1, "/", "", true, true)
+
+	err = uc.otpService.DeleteVerificationOTP(ctx, userId)
+	if err != nil {
+		uc.dbLogger.Alerts("ERROR", "OTP Deletion failed", gin.H{
+			"endpoint": "/DeleteAccount",
+			"user_id":  userId,
+			"error":    err.Error(),
+		})
+	}
+
+	_ = uc.otpService.ClearAttempts(ctx, userId)
+	if err != nil {
+		uc.dbLogger.Alerts("ERROR", "failed in clearing attempts", gin.H{
+			"endpoint": "/DeleteAccount",
+			"user_id":  userId,
+			"error":    err.Error(),
+		})
+	}
+
+	uc.dbLogger.Log("ACCOUNT", "user deleted", gin.H{
+			"endpoint": "/DeleteAccount",
+			"user_id":  userId,
+		},
+	)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Account deleted successfully",
+	})
+
 }
 
 func (uc *UserController) VerifyEmail(c *gin.Context) {

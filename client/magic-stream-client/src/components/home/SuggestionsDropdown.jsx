@@ -8,7 +8,6 @@ const SuggestionsDropdown = ({ suggestions, onSuggestionClick }) => {
       {suggestions.map((movie) => (
         <div
           key={movie.imdb_id}
-          action
           onClick={() => onSuggestionClick(movie.title)}
           className="suggestion-item"
         >

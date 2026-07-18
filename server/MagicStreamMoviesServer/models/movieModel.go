@@ -13,10 +13,17 @@ type Movie struct {
 	TitleNormalized string             `bson:"title_normalized,omitempty" json:"-"`
 	SearchTokens    []string           `bson:"search_tokens,omitempty" json:"-"`
 	PosterPath      string             `bson:"poster_path" json:"poster_path" validate:"required,url"`
+	BackdropPath    string             `bson:"backdrop_path" json:"backdrop_path"`
 	YouTubeID       string             `bson:"youtube_id" json:"youtube_id" validate:"required"`
 	Genre           []Genre            `bson:"genre" json:"genre" validate:"required,dive"`
 	AdminReview     string             `bson:"admin_review" json:"admin_review" validate:"required"`
 	Ranking         Ranking            `bson:"ranking" json:"ranking" validate:"required"`
+	IsAdult         bool               `bson:"is_adult" json:"adult"`
+	Overview        string             `bson:"overview" json:"overview"`
+	ReleaseDate     string             `bson:"release_date" json:"release_date"`
+	Tagline         string             `bson:"tagline" json:"tagline"`
+	Runtime         int                `bson:"runtime" json:"runtime"`
+	VoteAvg         float64            `bson:"vote_average" json:"vote_average"`
 }
 
 type Genre struct {
@@ -35,6 +42,7 @@ type MovieSuggestion struct {
 	PosterPath string `bson:"poster_path" json:"poster_path"`
 }
 
+// Manually giving search results - not using anywhere
 type ScoredMovie struct {
 	Movie Movie
 	Score float64
@@ -47,13 +55,21 @@ type TMDBFindResponse struct {
 }
 
 type TMDBMovieDetails struct {
-	Title      string  `json:"title"`
-	PosterPath string  `json:"poster_path"`
-	Rating     float64 `json:"vote_average"`
-	Genres     []struct {
-		ID   int    `json:"id"`
-		Name string `json:"name"`
-	} `json:"genres"`
+	// removed temporarily
+	// Title      string  `json:"title"`
+	// PosterPath string  `json:"poster_path"`
+	// Rating     float64 `json:"vote_average"`
+	// Genres     []struct {
+	// 	ID   int    `json:"id"`
+	// 	Name string `json:"name"`
+	// } `json:"genres"`
+	IsAdult     bool   `json:"adult"`
+	Overview    string `json:"overview"`
+	ReleaseDate string `json:"release_date"`
+	Tagline     string `json:"tagline"`
+	Runtime     int    `json:"runtime"`
+	BackdropPath string  `json:"backdrop_path"`
+	VoteAvg      float64 `json:"vote_average"`
 }
 
 type TMDBVideoResponse struct {
@@ -65,12 +81,20 @@ type TMDBVideoResponse struct {
 }
 
 type MovieData struct {
-	ImdbID    string
-	Title     string
-	Poster    string
-	Genres    []Genre
-	YoutubeID string
-	Ranking   Ranking
+	// removed temporarily
+	ImdbID string
+	// Title     string
+	// Poster    string
+	// Genres    []Genre
+	// YoutubeID string
+	// Ranking   Ranking
+	IsAdult     bool   `json:"adult"`
+	Overview    string `json:"overview"`
+	ReleaseDate string `json:"release_date"`
+	Tagline     string `json:"tagline"`
+	Runtime     int    `json:"runtime"`
+	BackdropPath string  `json:"backdrop_path"`
+	VoteAvg      float64 `json:"vote_average"`
 }
 
 type JobStatus string
