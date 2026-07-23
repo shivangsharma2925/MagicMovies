@@ -1,19 +1,19 @@
 import React from "react";
 
-export const Carousel = ({ heroMovies = [] }) => {
+export const Carousel = ({ heroMovies = {} }) => {
   /* based on Ranking */
   const mustWatch = heroMovies?.excellent ?? [];
   const goodWatch = heroMovies?.good ?? [];
   const okayWatch = heroMovies?.okay ?? [];
 
   /* based on release date */
-  const newRelease = heroMovies.newRelease;
+  const newRelease = heroMovies?.newRelease ?? [];
 
   const nonGenreKeys = ["excellent", "good", "okay", "newRelease"];
 
   /* based on Genres */
   const genres = Object.entries(heroMovies).filter(([genreName, movies]) => {
-    return !nonGenreKeys.includes(genreName) && movies.length > 3;
+    return (!nonGenreKeys.includes(genreName) && Array.isArray(movies) && movies.length > 3);
   });
 
   const carouselSections = [

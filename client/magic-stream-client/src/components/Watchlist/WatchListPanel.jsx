@@ -116,10 +116,11 @@ export default function WatchlistPanel({ movie }) {
   const handleRemove = (listId, movieId) =>
     removeMutation.mutate({ listId: listId, imdbId: movieId });
 
-  const handleToggleWatched = (listId, movieId) =>
+  const handleToggleWatched = (listId, movieId, watched) =>
     watchedMutation.mutate({
       listId: listId,
       imdbId: movieId,
+      watched: !watched,
     });
 
   if (isLoading)
@@ -342,68 +343,76 @@ export default function WatchlistPanel({ movie }) {
                         No movies in this list yet
                       </div>
                     ) : (
-                      list.movies.map((m) => (
-                        <div
-                          key={m.imdb_id}
-                          className={`wlp-movie-row ${m.imdb_id === movie?.imdb_id ? "current" : ""}`}
-                        >
+                      list.movies.map((m) => {
+                        const isUpdatingWatched = watchedMutation.isPending && watchedMutation.variables?.imdbId === m.imdb_id;
+                        return (
                           <div
-                            className="wlp-movie-thumb"
-                            onClick={() => navigate(`/stream/${m.youtube_id}`)}
+                            key={m.imdb_id}
+                            className={`wlp-movie-row ${m.imdb_id === movie?.imdb_id ? "current" : ""}`}
                           >
-                            {m.poster ? (
-                              <img src={m.poster} alt={m.title} />
-                            ) : (
-                              <FontAwesomeIcon icon={faFilm} />
-                            )}
-                          </div>
-
-                          <div className="wlp-movie-info">
-                            <span className="wlp-movie-title">{m.title}</span>
-                            <span className="wlp-movie-meta">
-                              {m.year}
-                              {m.watched && (
-                                <span className="wlp-watched-tag">
-                                  <FontAwesomeIcon icon={faCheck} /> Watched
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                          <div className="wlp-acc-actions">
-                            <button
-                              className={`wlp-icon-btn ${m?.watched ? "watched" : ""}`}
-                              onClick={() =>
-                                handleToggleWatched(list.id, m.imdb_id)
-                              }
-                              aria-label={
-                                m?.watched
-                                  ? "Mark as unwatched"
-                                  : "Mark as watched"
-                              }
-                              title={
-                                m?.watched
-                                  ? "Mark as unwatched"
-                                  : "Mark as watched"
-                              }
+                            <div
+                              className="wlp-movie-thumb"
+                              onClick={() => navigate(`/stream/${m.youtube_id}`)}
                             >
-                              {m?.watched ? (
-                                <FontAwesomeIcon icon={faEye} />
+                              {m.poster ? (
+                                <img src={m.poster} alt={m.title} />
                               ) : (
-                                <FontAwesomeIcon icon={faEyeSlash} />
+                                <FontAwesomeIcon icon={faFilm} />
                               )}
-                            </button>
+                            </div>
 
-                            <button
-                              className="wlp-icon-btn warning"
-                              onClick={() => handleRemove(list.id, m.imdb_id)}
-                              aria-label="Remove from List"
-                              title="Remove from List"
-                            >
-                              <FontAwesomeIcon icon={faCircleMinus} />
-                            </button>
+                            <div className="wlp-movie-info">
+                              <span className="wlp-movie-title">{m.title}</span>
+                              <span className="wlp-movie-meta">
+                                {m.year}
+                                {m.watched && (
+                                  <span className="wlp-watched-tag">
+                                    <FontAwesomeIcon icon={faCheck} /> Watched
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="wlp-acc-actions">
+                              <button
+                                disabled={isUpdatingWatched}
+                                className={`wlp-icon-btn ${m?.watched ? "watched" : ""} ${isUpdatingWatched ? "disabled" : ""}`}
+                                onClick={() =>
+                                  handleToggleWatched(
+                                    list.id,
+                                    m.imdb_id,
+                                    m.watched,
+                                  )
+                                }
+                                aria-label={
+                                  m?.watched
+                                    ? "Mark as unwatched"
+                                    : "Mark as watched"
+                                }
+                                title={
+                                  m?.watched
+                                    ? "Mark as unwatched"
+                                    : "Mark as watched"
+                                }
+                              >
+                                {m?.watched ? (
+                                  <FontAwesomeIcon icon={faEye} />
+                                ) : (
+                                  <FontAwesomeIcon icon={faEyeSlash} />
+                                )}
+                              </button>
+
+                              <button
+                                className="wlp-icon-btn warning"
+                                onClick={() => handleRemove(list.id, m.imdb_id)}
+                                aria-label="Remove from List"
+                                title="Remove from List"
+                              >
+                                <FontAwesomeIcon icon={faCircleMinus} />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>

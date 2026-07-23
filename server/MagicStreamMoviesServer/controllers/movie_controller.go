@@ -28,9 +28,16 @@ import (
 	"google.golang.org/genai"
 )
 
+type HeroMovieCache struct {
+	mu          sync.Mutex
+	chachedData map[string][]models.Movie
+	expiresAt   time.Time
+}
+
 type MovieController struct {
-	db       *database.MongoDB
-	dbLogger *dblogger.DBLogger
+	db             *database.MongoDB
+	dbLogger       *dblogger.DBLogger
+	HeroMovieCache HeroMovieCache
 }
 
 func NewMovieController(db *database.MongoDB, dbLogger *dblogger.DBLogger) *MovieController {
@@ -543,77 +550,139 @@ func (mc *MovieController) GetSuggestions(c *gin.Context) {
 	c.JSON(http.StatusOK, movies)
 }
 
+func (mc *MovieController) GetCachedHeroMovies() (map[string][]models.Movie, bool) {
+	mc.HeroMovieCache.mu.Lock()
+	defer mc.HeroMovieCache.mu.Unlock()
+
+	if mc.HeroMovieCache.chachedData == nil {
+		return nil, false
+	}
+
+	if time.Now().After(mc.HeroMovieCache.expiresAt) {
+		return nil, false
+	}
+
+	return mc.HeroMovieCache.chachedData, true
+}
+
+func (mc *MovieController) SetCachedHeroMovies(heroMovies map[string][]models.Movie) {
+	mc.HeroMovieCache.mu.Lock()
+	defer mc.HeroMovieCache.mu.Unlock()
+
+	mc.HeroMovieCache.chachedData = heroMovies
+	mc.HeroMovieCache.expiresAt = time.Now().Add(10 * time.Minute)
+}
+
 func (mc *MovieController) GetHeroMovies(c *gin.Context) {
+	//c.Header("Cache-Control", "public, max-age=300, s-maxage=600, stale-while-revalidate=60") //max-age = browser will keep this data for 300 secs, s-maxage = CDN will keep this data for 600 secs, stale-while-revalidate = keep the stale data alive while new data is refetched for 60 secs
+
+	if cached, found := mc.GetCachedHeroMovies(); found {
+		c.Header("X-Hero-Cache", "HIT")
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
+	c.Header("X-Hero-Cache", "MISS")
 
 	movies := make(map[string][]models.Movie)
 
-	err, excellentMovies := mc.getMoviesByRanking("Excellent", 10)
-	if err != nil {
-		movies["excellent"] = nil
-	} else {
-		movies["excellent"] = excellentMovies
+	var mu sync.Mutex
+
+	var primaryWG sync.WaitGroup
+
+	rankingQueries := []struct {
+		key     string
+		ranking string
+	}{
+		{"excellent", "Excellent"},
+		{"good", "Good"},
+		{"okay", "Okay"},
 	}
 
-	err, goodMovies := mc.getMoviesByRanking("Good", 10)
-	if err != nil {
-		movies["good"] = nil
-	} else {
-		movies["good"] = goodMovies
+	for _, query := range rankingQueries {
+
+		primaryWG.Add(1)
+
+		go func() {
+			defer primaryWG.Done()
+
+			result, err := mc.getMoviesByRanking(c, query.ranking, 10)
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			if err != nil {
+				movies[query.key] = []models.Movie{}
+				return
+			}
+
+			movies[query.key] = result
+		}()
 	}
 
-	err, okayMovies := mc.getMoviesByRanking("Okay", 10)
-	if err != nil {
-		movies["okay"] = nil
-	} else {
-		movies["okay"] = okayMovies
-	}
+	primaryWG.Add(1)
 
-	err, newMovies := mc.getNewMovies(5, 3)
-	if err != nil {
-		movies["newRelease"] = nil
-	} else {
-		movies["newRelease"] = newMovies
-	}
+	go func() {
+		defer primaryWG.Done()
+
+		result, err := mc.getNewMovies(c, 5, 3)
+
+		mu.Lock()
+		defer mu.Unlock()
+
+		if err != nil {
+			movies["newRelease"] = []models.Movie{}
+			return
+		}
+
+		movies["newRelease"] = result
+	}()
+
+	primaryWG.Wait()
 
 	err, genres := mc.fetchGenres(c)
+
 	if err != nil {
 		mc.dbLogger.Alerts("ERROR", "error fetching genres", gin.H{
 			"endpoint": "/GetHeroMovies",
 			"error":    err.Error(),
 		})
-	} else {
-		for _, genre := range genres {
-			err, genreMovies := mc.getMoviesByGenre(genre.GenreName, 10)
-			if err != nil {
-				movies[genre.GenreName] = nil
-			} else {
-				movies[genre.GenreName] = genreMovies
-			}
-		}
+		c.JSON(http.StatusOK, movies)
+		return
 	}
+
+	var genreWG sync.WaitGroup
+
+	for _, genre := range genres {
+
+		genreWG.Add(1)
+
+		go func() {
+			defer genreWG.Done()
+
+			result, err := mc.getMoviesByGenre(c, genre.GenreName, 10)
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			if err != nil {
+				movies[genre.GenreName] = []models.Movie{}
+				return
+			}
+
+			movies[genre.GenreName] = result
+		}()
+	}
+
+	genreWG.Wait()
+
+	mc.SetCachedHeroMovies(movies)
 
 	c.JSON(http.StatusOK, movies)
 }
 
-func (mc *MovieController) getMoviesByRanking(ranking string, limit int64) (error, []models.Movie) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	projection := bson.M{
-		"title":         1,
-		"imdb_id":       1,
-		"poster_path":   1,
-		"youtube_id":    1,
-		"overview":      1,
-		"release_date":  1,
-		"runtime":       1,
-		"is_adult":      1,
-		"ranking":       1,
-		"genre":         1,
-		"tagline":       1,
-		"backdrop_path": 1,
-		"vote_average":  1,
-	}
+func (mc *MovieController) getMoviesByRanking(ctx context.Context, ranking string, limit int64) ([]models.Movie, error) {
+	projection := heroMovieProjection()
 
 	findOptions := options.Find().SetProjection(projection).SetSort(bson.M{"vote_average": -1})
 
@@ -631,7 +700,7 @@ func (mc *MovieController) getMoviesByRanking(ranking string, limit int64) (erro
 			"endpoint": "/getMoviesByRanking",
 			"error":    err.Error(),
 		})
-		return err, nil
+		return nil, err
 	}
 
 	defer cursor.Close(ctx)
@@ -641,31 +710,14 @@ func (mc *MovieController) getMoviesByRanking(ranking string, limit int64) (erro
 			"endpoint": "/getMoviesByRanking",
 			"error":    err.Error(),
 		})
-		return err, nil
+		return nil, err
 	}
 
-	return nil, movies
+	return movies, nil
 }
 
-func (mc *MovieController) getNewMovies(limit int64, yearOpts ...int) (error, []models.Movie) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	projection := bson.M{
-		"title":         1,
-		"imdb_id":       1,
-		"poster_path":   1,
-		"youtube_id":    1,
-		"overview":      1,
-		"release_date":  1,
-		"runtime":       1,
-		"is_adult":      1,
-		"ranking":       1,
-		"genre":         1,
-		"tagline":       1,
-		"backdrop_path": 1,
-		"vote_average":  1,
-	}
+func (mc *MovieController) getNewMovies(ctx context.Context, limit int64, yearOpts ...int) ([]models.Movie, error) {
+	projection := heroMovieProjection()
 
 	findOptions := options.Find().SetProjection(projection).SetSort(bson.M{"vote_average": -1})
 
@@ -695,7 +747,7 @@ func (mc *MovieController) getNewMovies(limit int64, yearOpts ...int) (error, []
 			"endpoint": "/getNewMovies",
 			"error":    err.Error(),
 		})
-		return err, nil
+		return nil, err
 	}
 
 	defer cursor.Close(ctx)
@@ -705,31 +757,14 @@ func (mc *MovieController) getNewMovies(limit int64, yearOpts ...int) (error, []
 			"endpoint": "/getNewMovies",
 			"error":    err.Error(),
 		})
-		return err, nil
+		return nil, err
 	}
 
-	return nil, movies
+	return movies, nil
 }
 
-func (mc *MovieController) getMoviesByGenre(genre string, limit int64) (error, []models.Movie) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	projection := bson.M{
-		"title":         1,
-		"imdb_id":       1,
-		"poster_path":   1,
-		"youtube_id":    1,
-		"overview":      1,
-		"release_date":  1,
-		"runtime":       1,
-		"is_adult":      1,
-		"ranking":       1,
-		"genre":         1,
-		"tagline":       1,
-		"backdrop_path": 1,
-		"vote_average":  1,
-	}
+func (mc *MovieController) getMoviesByGenre(ctx context.Context, genre string, limit int64) ([]models.Movie, error) {
+	projection := heroMovieProjection()
 
 	findOptions := options.Find().SetProjection(projection).SetSort(bson.M{"vote_average": -1})
 
@@ -747,7 +782,7 @@ func (mc *MovieController) getMoviesByGenre(genre string, limit int64) (error, [
 			"endpoint": "/getMoviesByGenre",
 			"error":    err.Error(),
 		})
-		return err, nil
+		return nil, err
 	}
 
 	defer cursor.Close(ctx)
@@ -757,10 +792,10 @@ func (mc *MovieController) getMoviesByGenre(genre string, limit int64) (error, [
 			"endpoint": "/getMoviesByGenre",
 			"error":    err.Error(),
 		})
-		return err, nil
+		return nil, err
 	}
 
-	return nil, movies
+	return movies, nil
 }
 
 func (mc *MovieController) GetByCategory(c *gin.Context) {
@@ -773,11 +808,11 @@ func (mc *MovieController) GetByCategory(c *gin.Context) {
 	nonGenreFound := slices.Contains(categories, title)
 
 	if nonGenreFound {
-		err, movies = mc.getMoviesByRanking(title, 0)
+		movies, err = mc.getMoviesByRanking(c, title, 0)
 	} else if title == "newRelease" {
-		err, movies = mc.getNewMovies(0)
+		movies, err = mc.getNewMovies(c, 0)
 	} else {
-		err, movies = mc.getMoviesByGenre(title, 0)
+		movies, err = mc.getMoviesByGenre(c, title, 0)
 	}
 
 	if err != nil {
@@ -1304,4 +1339,22 @@ func GetGeminiClient(ctx context.Context) (*genai.Client, error) {
 	})
 
 	return geminiClient, err
+}
+
+func heroMovieProjection() bson.M {
+	return bson.M{
+		"title":         1,
+		"imdb_id":       1,
+		"poster_path":   1,
+		"youtube_id":    1,
+		"overview":      1,
+		"release_date":  1,
+		"runtime":       1,
+		"is_adult":      1,
+		"ranking":       1,
+		"genre":         1,
+		"tagline":       1,
+		"backdrop_path": 1,
+		"vote_average":  1,
+	}
 }

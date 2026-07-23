@@ -14,7 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type WatchListController struct {
@@ -118,7 +117,7 @@ func (wc *WatchListController) GetWatchLists(c *gin.Context) {
 	userId, err := utilities.GetUserIdfromContext(c)
 	if err != nil {
 		wc.dbLogger.Alerts("ERROR", "Unable to get user id from context", gin.H{
-			"endpoint": "/NewWatchList",
+			"endpoint": "/GetWatchLists",
 			"error":    err.Error(),
 		})
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong, try again!"})
@@ -262,6 +261,14 @@ func (wc *WatchListController) AddMovietoWatchList(c *gin.Context) {
 		return
 	}
 
+	userID, err := utilities.GetUserIdfromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
 	var req models.MoviesList
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -280,6 +287,7 @@ func (wc *WatchListController) AddMovietoWatchList(c *gin.Context) {
 
 	filter := bson.M{
 		"_id":            watchListId,
+		"user_id":        userID,
 		"movies.imdb_id": bson.M{"$ne": req.ImdbID}, //ne = not equal
 	}
 
@@ -338,9 +346,17 @@ func (wc *WatchListController) DeleteMoviefromWatchList(c *gin.Context) {
 		return
 	}
 
+	userID, err := utilities.GetUserIdfromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
 	watchlistCollection := wc.db.Collection("watchlist")
 
-	filter := bson.M{"_id": watchListId}
+	filter := bson.M{"_id": watchListId, "user_id": userID}
 	update := bson.M{
 		"$pull": bson.M{
 			"movies": bson.M{"imdb_id": movieId},
@@ -377,6 +393,10 @@ func (wc *WatchListController) ToggleWatch(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c, 10*time.Second)
 	defer cancel()
 
+	var request struct {
+		Watched *bool `json:"watched" binding:"required"`
+	}
+
 	watchListIdStr := c.Param("watchlist_id")
 	movieId := c.Param("movie_id")
 
@@ -386,37 +406,41 @@ func (wc *WatchListController) ToggleWatch(c *gin.Context) {
 		return
 	}
 
-	var watchList models.WatchList
+	userID, err := utilities.GetUserIdfromContext(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Unauthorized",
+		})
+		return
+	}
+
+	err = c.ShouldBindJSON(&request)
+	if err != nil {
+		wc.dbLogger.Alerts("ERROR", "Error in binding the request", gin.H{
+			"endpoint":     "/ToggleWatch",
+			"watchlist_id": watchListIdStr,
+			"movie_id":     movieId,
+			"error":        err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "watched value is required"})
+		return
+	}
 
 	watchlistCollection := wc.db.Collection("watchlist")
 
-	filter := bson.M{"_id": watchListId, "movies.imdb_id": movieId}
-
-	opts := options.FindOne().SetProjection(bson.M{"movies.$": 1, "_id": 0})
-
-	errCount := watchlistCollection.FindOne(ctx, filter, opts).Decode(&watchList)
-	if errCount == mongo.ErrNoDocuments {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Watchlist or Movie not found"})
-		return
-	}
-
-	if len(watchList.Movies) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Movie data empty"})
-		return
-	}
-	isWatched := watchList.Movies[0].Watched
+	filter := bson.M{"_id": watchListId, "user_id": userID, "movies.imdb_id": movieId}
 
 	update := bson.M{
 		"$set": bson.M{
-			"movies.$.watched": !isWatched,
+			"movies.$.watched":    *request.Watched,
 			"movies.$.updated_at": time.Now(),
 		},
 	}
 
-	_, err = watchlistCollection.UpdateOne(ctx, filter, update)
+	result, err := watchlistCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		wc.dbLogger.Alerts("ERROR", "Error in executing db update query", gin.H{
-			"endpoint":     "/WatchedMovie",
+			"endpoint":     "/ToggleWatch",
 			"watchlist_id": watchListIdStr,
 			"movie_id":     movieId,
 			"error":        err.Error(),
@@ -425,9 +449,14 @@ func (wc *WatchListController) ToggleWatch(c *gin.Context) {
 		return
 	}
 
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Watchlist or movie not found"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Movie watched status updated successfully",
-		"watched": !isWatched,
+		"watched": request.Watched,
 	})
 
 }

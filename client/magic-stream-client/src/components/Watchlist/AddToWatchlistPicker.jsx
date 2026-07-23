@@ -73,11 +73,15 @@ export default function AddToWatchlistPicker({ movie, onClose }) {
             {watchLists.map((list, i) => {
               const c      = COLORS[i % COLORS.length];
               const exists = list.movies?.some(m => m.imdb_id === movie?.imdb_id);
+              const isAddingThisList = addMutation.isPending && addMutation.variables?.listId === list.id;
+              const isRemovingThisList = removeMutation.isPending && removeMutation.variables?.listId === list.id;
+              const isUpdatingThisList = isAddingThisList || isRemovingThisList;
 
               return (
                 <button
+                  disabled={isUpdatingThisList}
                   key={list.id}
-                  className={`atw-item ${exists ? "checked" : ""}`}
+                  className={`atw-item ${exists ? "checked" : ""} ${isUpdatingThisList ? "disabled" : ""}`}
                   onClick={() => handleToggle(list)}
                 >
                   <div className="atw-item-icon" style={{ background: c.bg, color: c.text }}>

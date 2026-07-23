@@ -40,18 +40,19 @@ export default function HeroSection({ movies }) {
     }, 300);
   };
 
-  const startTimer = () => {
+  const startTimer = useCallback((len) => {
+    if (len === 0) return;
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % featured.length);
+      setCurrent((prev) => (prev + 1) % len);
     }, HERO_INTERVAL);
-  };
+  }, []);
 
   useEffect(() => {
     if (!featured.length) return;
-    startTimer();
+    startTimer(featured.length);
     return () => clearInterval(timerRef.current);
-  }, [featured.length]);
+  }, [featured.length, startTimer]);
 
   if (!featured.length) return null;
 
@@ -59,10 +60,6 @@ export default function HeroSection({ movies }) {
 
   return (
     <div className="hero-section">
-      {/* <div
-    className={`hero-backdrop ${fading ? "hero-fading" : ""}`}
-    style={{ backgroundImage: `url(${movie.backdrop_path || movie.poster_path})` }}
-  /> */}
       <div
         className={`hero-backdrop ${fading ? "hero-fading" : ""}`}
         style={{

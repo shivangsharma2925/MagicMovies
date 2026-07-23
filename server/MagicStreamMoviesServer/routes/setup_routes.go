@@ -88,7 +88,7 @@ func SetupRoutes(
 		protected.POST("/watchlists/:watchlist_id", watchListController.RenameWatchLists)
 		protected.POST("/watchlists/:watchlist_id/movies", watchListController.AddMovietoWatchList)
 		protected.DELETE("/watchlists/:watchlist_id/movies/:movie_id", watchListController.DeleteMoviefromWatchList)
-		protected.POST("/watchlists/:watchlist_id/movies/:movie_id", watchListController.ToggleWatch)
+		protected.POST("/watchlists/:watchlist_id/movies/:movie_id/watched", watchListController.ToggleWatch)
 
 	}
 }

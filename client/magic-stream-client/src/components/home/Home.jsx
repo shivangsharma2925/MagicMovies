@@ -2,14 +2,18 @@ import React, { useEffect, useState } from "react";
 import Movies from "../movies/Movies";
 import { Button } from "react-bootstrap";
 import Spinner from "../../utils/Spinner";
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import UseWebSocket from "../../hook/UseWebSocket";
 import { fetchMovies, getHeroMovies } from "./GetMovieServices";
 import useInfiniteScroll from "../../hook/UseInfiniteScroll";
 import SearchBar from "./SearchBar";
-import {Carousel} from "../movieCarousel/Carousel";
+import { Carousel } from "../movieCarousel/Carousel";
 import MovieCarousel from "../movieCarousel/MovieCarousel";
-import HeroSection from "../heroSection/HeroSection"
+import HeroSection from "../heroSection/HeroSection";
 import "../../styling/Home.css";
 
 const Home = () => {
@@ -56,8 +60,7 @@ const Home = () => {
   } = useInfiniteQuery({
     queryKey: ["movies"],
 
-    queryFn: ({ pageParam = "" }) =>
-      fetchMovies({pageParam }),
+    queryFn: ({ pageParam = "" }) => fetchMovies({ pageParam }),
 
     initialPageParam: "",
 
@@ -73,13 +76,14 @@ const Home = () => {
   /* fetching hero movies */
   const {
     data: heroMovies,
+    isLoading: heroLoading,
   } = useQuery({
     queryKey: ["heroMovies"],
 
     queryFn: () => getHeroMovies(),
 
     staleTime: 1000 * 60 * 5,
-  })
+  });
 
   const observerRef = useInfiniteScroll(fetchNextPage, hasNextPage);
 
@@ -112,11 +116,11 @@ const Home = () => {
     console.log(error);
     message = "Error fetching movies";
   }
-  
+
   // get carousels movies
-  const carousels = React.useMemo(()=>{
+  const carousels = React.useMemo(() => {
     return Carousel({ heroMovies });
-  }, [heroMovies]) 
+  }, [heroMovies]);
 
   return (
     <>
@@ -138,26 +142,34 @@ const Home = () => {
         </div>
       )}
 
-      <div className="">
-        {isLoading ? (
+      <div>
+        {heroLoading ? (
           <Spinner />
         ) : (
           <>
             <HeroSection movies={heroMovies} />
 
             <div className="carousels-container">
-              {carousels.map((carousel) => 
-                <MovieCarousel key={carousel.title} section={carousel.section} title={carousel.title} movies={carousel.movies}></MovieCarousel>
-              )}
+              {carousels.map((carousel) => (
+                <MovieCarousel
+                  key={carousel.title}
+                  section={carousel.section}
+                  title={carousel.title}
+                  movies={carousel.movies}
+                ></MovieCarousel>
+              ))}
             </div>
-
-            <Movies movies={allMovies} message={message} />
-
-            {isFetchingNextPage && <Spinner />}
-
-            <div ref={observerRef} style={{ height: "20px" }} />
           </>
         )}
+
+        {isLoading ? (
+          <Spinner />
+        ) : (
+          <Movies movies={allMovies} message={message} />
+        )}
+        {isFetchingNextPage && <Spinner />}
+
+        <div ref={observerRef} style={{ height: "20px" }} />
       </div>
     </>
   );
