@@ -89,11 +89,16 @@ func main() {
 	config.AllowOrigins = origins
 	config.AllowMethods = []string{"GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
-	config.ExposeHeaders = []string{"Content-Length"}
+	config.ExposeHeaders = []string{"Content-Length", "X-Hero-Cache"}
 	config.AllowCredentials = true
 	config.MaxAge = 12 * time.Hour
 
 	router.Use(cors.New(config))
+
+	router.Use(func(c *gin.Context) {
+		c.Writer.Header().Add("Vary", "Origin")
+		c.Next()
+	})
 
 	// Custom middleware
 	// router.Use(gin.Logger())
