@@ -5,6 +5,7 @@ import ResendOTP from "./ResendOTP";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
+import PageTitle from "../../utils/PageTitle";
 import "../../styling/LoginRegister.css";
 
 export default function VerifyEmail() {
@@ -85,6 +86,7 @@ export default function VerifyEmail() {
 
   return (
     <Container className="login-container d-flex align-items-center justify-content-center">
+      <PageTitle title="Verify Email" />
       <div className="login-card">
         <div className="text-center mb-4">
           <div className="login-logo fs-1" aria-label="Email icon">📧</div>

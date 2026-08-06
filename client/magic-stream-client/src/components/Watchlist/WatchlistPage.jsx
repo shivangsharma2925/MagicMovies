@@ -10,6 +10,7 @@ import {
 import { useWatchlists } from "../../hook/UseWatchlists";
 import CreateWatchlistModal from "./CreateWatchlistModal";
 import WatchlistPanel from "./WatchListPanel";
+import PageTitle from "../../utils/PageTitle";
 
 export default function WatchlistPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -33,6 +34,7 @@ export default function WatchlistPage() {
 
   return (
     <>
+      <PageTitle title="Watchlists" />
       {shouldShowCreateModal && (
         <CreateWatchlistModal onClose={closeCreateModal} />
       )}

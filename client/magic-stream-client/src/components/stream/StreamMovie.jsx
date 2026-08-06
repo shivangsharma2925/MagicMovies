@@ -1,5 +1,8 @@
 import { useParams } from "react-router-dom";
 import ReactPlayer from "react-player";
+import { useQuery } from "@tanstack/react-query";
+import { fetchMovie } from "../home/GetMovieServices";
+import PageTitle from "../../utils/PageTitle";
 
 const styles = {
   playerContainer: {
@@ -9,20 +12,47 @@ const styles = {
 
 const StreamMovie = () => {
   let params = useParams();
-  let key = params.yt_id;
-  const Player = ReactPlayer.default;
-  
+  let imdbId = params.imdb_id;
+
+  const {
+    data: movie,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["movie", imdbId],
+    queryFn: () => fetchMovie(imdbId),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <h2 className="m-auto text-white text-center">
+        Loading...
+      </h2>
+    );
+  }
+
+  if (isError || !movie?.youtube_id) {
+    return (
+      <h2 className="m-auto text-white text-center">
+        Trailer not available.
+      </h2>
+    );
+  }
+
+  const Player = ReactPlayer.default ?? ReactPlayer;
+
   return (
     <div style={styles.playerContainer}>
-      {key != "null" && key != null && key !== ""? (
-        <Player
-          controls={true}
-          playing={true}
-          url={`https://www.youtube.com/watch?v=${key}`}
-          width="100%"
-          height="100%"
-        />
-      ) : <h2 className="m-auto text-white text-center">Trailer not available.</h2>}
+      <PageTitle title={`Streaming - ${movie.title}`} />
+
+      <Player
+        controls
+        playing
+        url={`https://www.youtube.com/watch?v=${movie.youtube_id}`}
+        width="100%"
+        height="100%"
+      />
     </div>
   );
 };

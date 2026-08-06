@@ -1,0 +1,8 @@
+# Allow all search engines
+User-agent: *
+
+# Allow crawling of the whole site
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.magicmovies.site/sitemap.xml

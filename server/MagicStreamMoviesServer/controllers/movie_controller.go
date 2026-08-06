@@ -912,7 +912,7 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 		err = queue.EnqueueMovie(imdbID)
 
 		if err != nil {
-			mc.dbLogger.Alerts("ERROR", "Error in adding moi=vies to queue", gin.H{
+			mc.dbLogger.Alerts("ERROR", "Error in adding movies to queue", gin.H{
 				"error":    err,
 				"imdbID":   imdbID,
 				"endpoint": "/AddMovie",
@@ -920,6 +920,7 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 			skipped = append(skipped, imdbID)
 			continue
 		}
+		// queue.InspectMovieQueue(redisOpt)
 		added = append(added, imdbID)
 	}
 

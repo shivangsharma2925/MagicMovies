@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons";
 import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import Movies from "../movies/Movies";
+import PageTitle from "../../utils/PageTitle";
 import Spinner from "../../utils/Spinner";
 
 const Recommended = () => {
@@ -49,6 +50,7 @@ const Recommended = () => {
 
   return (
     <>
+      <PageTitle title="Recommended Movies" />
       <div className="recommended-search-wrap">
         <FontAwesomeIcon icon={faMagnifyingGlass} className="nb-search-icon" />
 

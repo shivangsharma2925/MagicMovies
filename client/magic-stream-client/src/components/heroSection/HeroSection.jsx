@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faCircleInfo } from "@fortawesome/free-solid-svg-icons";
+import { slugify } from "../../utils/SlugifyTitle";
 import "../../styling/Hero.css";
 
 const HERO_INTERVAL = 6000;
@@ -79,7 +80,7 @@ export default function HeroSection({ movies }) {
         <div className="hero-actions">
           <button
             className="btn-hero-play"
-            onClick={() => navigate(`/stream/${movie.youtube_id}`)}
+            onClick={() => navigate(`/stream/${slugify(movie.title)}/${movie.imdb_id}`)}
           >
             <FontAwesomeIcon icon={faPlay} /> Play Trailer
           </button>

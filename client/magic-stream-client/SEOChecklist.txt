@@ -1,0 +1,16 @@
+Task                                           | Priority 
+---------------------------------------------- | :------: 
+Dynamic `<title>`                              |   ⭐⭐⭐⭐⭐  
+Dynamic meta description                       |   ⭐⭐⭐⭐⭐  
+Open Graph tags                                |   ⭐⭐⭐⭐   
+Sitemap.xml                                    |   ⭐⭐⭐⭐⭐  
+robots.txt                                     |   ⭐⭐⭐⭐⭐  
+Google Search Console                          |   ⭐⭐⭐⭐⭐  
+JSON-LD (Movie schema)                         |   ⭐⭐⭐⭐⭐  
+Canonical URLs                                 |   ⭐⭐⭐⭐   
+Semantic HTML                                  |    ⭐⭐⭐   
+Alt text                                       |    ⭐⭐⭐   
+Lazy-loaded, optimized images                  |   ⭐⭐⭐⭐   
+Core Web Vitals optimization                   |   ⭐⭐⭐⭐⭐  
+Better movie URLs (slug instead of YouTube ID) |   ⭐⭐⭐⭐   
+SSR/SSG (e.g. Next.js)                         |   ⭐⭐⭐⭐⭐  

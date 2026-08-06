@@ -156,7 +156,7 @@ func (ms *MovieService) FetchMovieData(imdbID string, ctx context.Context) (*mod
 		Poster:       "https://image.tmdb.org/t/p/w300" + details.PosterPath,
 		Genres:       utilities.MapGenres(details.Genres, ms.genreMap),
 		YoutubeID:    youtubeID,
-		Ranking:      utilities.GetRanking(details.Rating),
+		Ranking:      utilities.GetRanking(details.VoteAvg),
 		IsAdult:      details.IsAdult,
 		Overview:     details.Overview,
 		ReleaseDate:  details.ReleaseDate,

@@ -12,6 +12,9 @@ import { fetchTitles } from "../home/GetMovieServices";
 import Spinner from "../../utils/Spinner";
 import { useWatchlists } from "../../hook/UseWatchlists";
 import AddToWatchlistPicker from "../Watchlist/AddToWatchlistPicker";
+import PageTitle from "../../utils/PageTitle";
+import { Helmet } from "react-helmet-async";
+import { slugify } from "../../utils/SlugifyTitle";
 import "../../styling/Category.css";
 
 // Emoji/label map for known category names
@@ -29,7 +32,10 @@ export default function CategoryMovies() {
   const navigate = useNavigate();
   const [selectedMovie, setSelectedMovie] = useState(null);
 
-  const meta = CATEGORY_META[title] ?? { label: "Category", color: "#f32256da" };
+  const meta = CATEGORY_META[title] ?? {
+    label: "Category",
+    color: "#f32256da",
+  };
 
   const { data: watchLists = [] } = useWatchlists();
 
@@ -49,10 +55,32 @@ export default function CategoryMovies() {
     setSelectedMovie(movie);
   };
 
+  const description = `watch ${title} movies trailer and explore movie details, genres, release date, and other info.`;
+  const pageUrl = `https://www.magicmovies.site/category/${title}`;
+
   if (isLoading) return <Spinner />;
 
   return (
     <div className="cat-page">
+      <Helmet>
+        <title>{`${title} Movies — Magic Stream`}</title>
+
+        {/* Search engine description */}
+        <meta name="description" content={description} />
+
+        {/* Search engine crawling */}
+        <meta name="robots" content="index, follow" />
+
+        {/* Main page URL */}
+        <link rel="canonical" href={pageUrl} />
+
+        {/* Open Graph - control how page appears when shared on platforms such as WhatsApp, Facebook, LinkedIn, etc */}
+        <meta property="og:title" content={`${title}`} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:type" content="video.movie" />
+        <meta property="og:site_name" content="Magic Stream" />
+      </Helmet>
       {/* Hero header */}
       <div className="cat-hero">
         <div className="cat-hero-bg" style={{ "--bg-color": meta.color }} />
@@ -101,7 +129,7 @@ export default function CategoryMovies() {
                 <div
                   key={movie._id}
                   className="cat-card"
-                  onClick={() => navigate(`/stream/${movie.youtube_id}`)}
+                  onClick={() => navigate(`/stream/${slugify(movie.title)}/${movie.imdb_id}`)}
                 >
                   <div className="cat-poster">
                     <img

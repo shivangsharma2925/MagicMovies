@@ -9,10 +9,14 @@ import {
   faPlus,
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
+import { Helmet } from "react-helmet-async";
 import { fetchMovie } from "../home/GetMovieServices";
 import Spinner from "../../utils/Spinner";
 import { useWatchlists } from "../../hook/UseWatchlists";
 import AddToWatchlistPicker from "../Watchlist/AddToWatchlistPicker";
+import FormatDuration from "../../hook/UseFormatDurationSEO";
+import PageTitle from "../../utils/PageTitle";
+import { slugify } from "../../utils/SlugifyTitle";
 import "../../styling/MovieDetail.css";
 // import WatchlistPanel from "../Watchlist/AddToWatchlistModal";
 
@@ -88,8 +92,85 @@ const MovieDetails = () => {
     setShowPicker((p) => !p);
   };
 
+  const title = movie?.title ? `${movie.title} — Magic Stream` : "Magic Stream";
+  const description = movie?.overview
+    ? movie.overview.length > 155
+      ? movie.overview.slice(0, 152) + "..."
+      : movie.overview
+    : `Watch ${movie?.title ?? "movie"} trailer and explore ratings, genres and recommendations.`;
+  const pageUrl = `https://www.magicmovies.site/movie/detail/${movie.imdb_id}`;
+  const imageUrl = movie.backdrop_path;
+
+  const genres = movie?.genre?.map((genre) => genre.genre_name) ?? [];
+
+  const movieStructuredData = movie
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Movie",
+
+        "@id": `https://www.magicmovies.site/movie/detail/${movie.imdb_id}#movie`,
+
+        url: `https://www.magicmovies.site/movie/detail/${movie.imdb_id}`,
+
+        name: movie.title,
+
+        description: movie.overview,
+
+        image: [movie.poster_path, movie.backdrop_path].filter(Boolean),
+
+        dateCreated: movie.release_date,
+
+        genre: genres,
+
+        duration: FormatDuration(movie.runtime),
+
+        contentRating: movie.adult ? "Adults Only" : undefined,
+
+        sameAs: `https://www.imdb.com/title/${movie.imdb_id}/`,
+
+        trailer: movie.youtube_id
+          ? {
+              "@type": "VideoObject",
+              name: `${movie.title} Official Trailer`,
+              description: `Watch the trailer for ${movie.title}.`,
+              thumbnailUrl: `https://img.youtube.com/vi/${movie.youtube_id}/maxresdefault.jpg`,
+              embedUrl: `https://www.youtube.com/embed/${movie.youtube_id}`,
+              contentUrl: `https://www.youtube.com/watch?v=${movie.youtube_id}`,
+            }
+          : undefined,
+      }
+    : null;
+
   return (
     <div className="md-page">
+      <Helmet>
+        <title>{title}</title>
+
+        {/* Search engine description */}
+        <meta name="description" content={description} />
+
+        {/* Search engine crawling */}
+        <meta name="robots" content="index, follow" />
+
+        <meta content={`${movie.title} Poster`} />
+
+        {/* Main page URL */}
+        <link rel="canonical" href={pageUrl} />
+
+        {/* Open Graph - control how page appears when shared on platforms such as WhatsApp, Facebook, LinkedIn, etc */}
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:image" content={imageUrl} />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:type" content="video.movie" />
+        <meta property="og:site_name" content="Magic Stream" />
+
+        {/* JSON-LD(JavaScript Object Notation for Linked Data), json like format useful for web crawlers and SEO */}
+        <script type="application/ld+json">
+          {JSON.stringify(movieStructuredData)}
+        </script>
+      </Helmet>
+
       <div className="md-hero">
         <img
           className="md-bg-img"
@@ -148,7 +229,7 @@ const MovieDetails = () => {
           <div className="md-actions-row">
             <button
               className="md-primary-btn"
-              onClick={() => navigate(`/stream/${movie.youtube_id}`)}
+              onClick={() => navigate(`/stream/${slugify(movie.title)}/${movie.imdb_id}`)}
             >
               <FontAwesomeIcon icon={faPlay} />
               Watch Trailer

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay, faCircleInfo } from "@fortawesome/free-solid-svg-icons";
+import { slugify } from "../../utils/SlugifyTitle";
 import "../../styling/Carousel.css";
 
 export default function MovieCarousel({ title, movies, section }) {
@@ -35,7 +36,7 @@ export default function MovieCarousel({ title, movies, section }) {
             <div
               key={movie._id}
               className="mc-card"
-              onClick={() => navigate(`/stream/${movie.youtube_id}`)}
+              onClick={() => navigate(`/stream/${slugify(movie.title)}/${movie.imdb_id}`)}
             >
               <div className="mc-poster">
                 <img src={movie.poster_path} alt={movie.title} loading="lazy" />

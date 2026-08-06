@@ -6,6 +6,7 @@ import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import UseAuth from "../../hook/UseAuth";
 import Movie from "../movie/Movie";
 import Spinner from "../../utils/Spinner";
+import PageTitle from "../../utils/PageTitle";
 import "../../styling/AdminReview.css";
 
 const Review = () => {
@@ -64,6 +65,7 @@ const Review = () => {
 
   return (
     <>
+      <PageTitle title={`Review - ${movie.title}`} />
       <div className="container py-5">
         <h2 className="review-page-title">Admin Review</h2>
         <div className="row justify-content-center g-4">

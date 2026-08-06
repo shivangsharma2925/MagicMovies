@@ -5,7 +5,8 @@ import Form from "react-bootstrap/Form";
 import axiosConfig from "../../api/axiosConfig";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import UseAuth from "../../hook/UseAuth";
-import logo from "../../../logo.png";
+import PageTitle from "../../utils/PageTitle";
+import logo from "../../assets/logo.png";
 import "../../styling/LoginRegister.css";
 
 const Login = () => {
@@ -125,88 +126,101 @@ const Login = () => {
   }
 
   return (
-    <Container className="login-container d-flex align-items-center justify-content-center">
-      <div className="login-card">
-        <div className="text-center mb-4">
-          <img src={logo} alt="Logo" width={60} className="mb-2" />
-          <h2 className="login-title">Sign In</h2>
-          <p className="login-subtitle">
-            Signin to your Magic Movie Stream account.
-          </p>
-        </div>
-
-        {error && <div className="login-alert login-alert-error">{error}</div>}
-        {message && (
-          <div className="login-alert login-alert-success">{message}</div>
-        )}
-
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="login-field mb-3">
-            <Form.Label htmlFor="email">Email</Form.Label>
-            <Form.Control
-              id="email"
-              name="email"
-              type="email"
-              placeholder="Enter email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="login-input"
-              required
-            />
-          </Form.Group>
-          <Form.Group className="login-field mb-1">
-            <Form.Label>Password</Form.Label>
-            <Form.Control
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="login-input"
-              required
-            />
-          </Form.Group>
-
-          <div className="text-end mb-3">
-            <Link
-              onClick={handleForgotPassword}
-              className={`login-forgot ${highlightForgot ? "login-forgot-active" : ""}`}
-              style={{
-                transition: "all 0.2s ease",
-                animation: highlightForgot ? "pulse 1.2s infinite" : "none",
-              }}
-            >
-              Forgot Password?
-            </Link>
+    <>
+      <PageTitle title="Login Account" />
+      <Container className="login-container d-flex align-items-center justify-content-center">
+        <div className="login-card">
+          <div className="text-center mb-4">
+            <img src={logo} alt="Logo" width={60} className="mb-2" />
+            <h2 className="login-title">Sign In</h2>
+            <p className="login-subtitle">
+              Signin to your Magic Movie Stream account.
+            </p>
           </div>
 
-          <Button type="submit" className="login-btn w-100" disabled={loading}>
-            {loading ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-2"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                Logging in...
-              </>
+          {error && (
+            <div className="login-alert login-alert-error">{error}</div>
+          )}
+          {message && (
+            <div className="login-alert login-alert-success">{message}</div>
+          )}
+
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="login-field mb-3">
+              <Form.Label htmlFor="email">Email</Form.Label>
+              <Form.Control
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Enter email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="login-input"
+                required
+              />
+            </Form.Group>
+            <Form.Group className="login-field mb-1">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="login-input"
+                required
+              />
+            </Form.Group>
+
+            <div className="text-end mb-3">
+              <Link
+                onClick={handleForgotPassword}
+                className={`login-forgot ${highlightForgot ? "login-forgot-active" : ""}`}
+                style={{
+                  transition: "all 0.2s ease",
+                  animation: highlightForgot ? "pulse 1.2s infinite" : "none",
+                }}
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
+            <Button
+              type="submit"
+              className="login-btn w-100"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span
+                    className="spinner-border spinner-border-sm me-2"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
+                  Logging in...
+                </>
+              ) : (
+                "Login"
+              )}
+            </Button>
+          </Form>
+
+          <div className="login-divider">
+            <hr />
+            <span>or</span>
+            <hr />
+          </div>
+
+          <div className="login-register-row">
+            Don't have an account?{" "}
+            {!loading ? (
+              <Link to="/register">Resgister here</Link>
             ) : (
-              "Login"
+              <p>Resgister here</p>
             )}
-          </Button>
-        </Form>
-
-        <div className="login-divider">
-          <hr />
-          <span>or</span>
-          <hr />
+          </div>
         </div>
-
-        <div className="login-register-row">
-          Don't have an account?{" "}
-          {!loading ? <Link to="/register">Resgister here</Link> : <p>Resgister here</p>}
-        </div>
-      </div>
-    </Container>
+      </Container>
+    </>
   );
 };
 

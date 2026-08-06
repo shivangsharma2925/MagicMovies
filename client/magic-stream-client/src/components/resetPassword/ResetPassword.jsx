@@ -4,6 +4,7 @@ import Form from "react-bootstrap/Form";
 import Container from "react-bootstrap/Container";
 import axiosConfig from "../../api/axiosConfig";
 import { FormGroup } from "react-bootstrap";
+import PageTitle from "../../utils/PageTitle";
 import "../../styling/LoginRegister.css";
 // import { useNavigate } from "react-router-dom";
 
@@ -44,6 +45,7 @@ const ResetPassword = () => {
 
   return (
     <Container className="login-container d-flex align-items-center justify-content-center">
+      <PageTitle title="Reset Password" />
       <div className="login-card">
         <div className="text-center mb-4">
           <div className="login-logo fs-1">🔒</div>

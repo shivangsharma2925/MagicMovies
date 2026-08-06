@@ -4,6 +4,7 @@ import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import UseWebSocket from "../../hook/UseWebSocket";
 import AskAiBtn from "../../utils/AskAiModal";
+import PageTitle from "../../utils/PageTitle";
 import "../../styling/AddMovie.css";
 const JOBS_PER_PAGE = 8;
 
@@ -221,6 +222,8 @@ const AddMovie = () => {
 
   return (
     <div className="container mt-4">
+      <PageTitle title="Add Movies" />
+
       <h2 className="queue-page-title">Add Movie</h2>
 
       <form onSubmit={handleSubmit} className="add-movie-form">

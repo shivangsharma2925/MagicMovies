@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://www.magicmovies.site/</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Excellent</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Good</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Okay</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/newRelease</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Comedy</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Thriller</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Action</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Mystery</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Crime</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/Sci-Fi</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/movie/detail/:imdb_id</loc>
+  </url>
+
+  <url>
+    <loc>https://www.magicmovies.site/category/:title</loc>
+  </url>
+</urlset>

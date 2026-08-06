@@ -125,6 +125,7 @@ func MapToSchema(data *models.MovieData) *models.Movie {
 		TitleNormalized: NormalizeText(data.Title),
 		SearchTokens:    GenerateSearchTokens(data.Title),
 		PosterPath:      data.Poster,
+		BackdropPath: data.BackdropPath,
 		YouTubeID:       data.YoutubeID,
 		Genre:           data.Genres,
 		AdminReview:     "", // default empty
@@ -134,7 +135,6 @@ func MapToSchema(data *models.MovieData) *models.Movie {
 		ReleaseDate:  data.ReleaseDate,
 		Tagline:      data.Tagline,
 		Runtime:      data.Runtime,
-		BackdropPath: data.BackdropPath,
 		VoteAvg:      data.VoteAvg,
 	}
 }

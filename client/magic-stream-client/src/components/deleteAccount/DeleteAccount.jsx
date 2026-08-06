@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import Container from "react-bootstrap/Container";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
-import logo from "../../../logo.png";
+import logo from "../../assets/logo.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import axiosConfig from "../../api/axiosConfigwocredential";
@@ -14,6 +14,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import UseAuth from "../../hook/UseAuth";
+import PageTitle from "../../utils/PageTitle";
 import "../../styling/LoginRegister.css";
 
 const DeleteAccount = () => {
@@ -87,6 +88,7 @@ const DeleteAccount = () => {
 
   return (
     <>
+      <PageTitle title="Delete Account"/>
       <Container className="delete-account-section d-flex align-items-center justify-content-center">
         <div className="delete-account-card">
           <div className="text-center mb-4">

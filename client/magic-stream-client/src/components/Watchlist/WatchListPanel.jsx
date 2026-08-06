@@ -22,6 +22,7 @@ import {
   useRemoveFromWatchlist,
   useToggleWatched,
 } from "../../hook/UseWatchlists";
+import { slugify } from "../../utils/SlugifyTitle";
 import "../../styling/WatchList.css";
 
 const COLORS = [
@@ -352,7 +353,7 @@ export default function WatchlistPanel({ movie }) {
                           >
                             <div
                               className="wlp-movie-thumb"
-                              onClick={() => navigate(`/stream/${m.youtube_id}`)}
+                              onClick={() => navigate(`/stream/${slugify(m.title)}/${m.imdb_id}`)}
                             >
                               {m.poster ? (
                                 <img src={m.poster} alt={m.title} />

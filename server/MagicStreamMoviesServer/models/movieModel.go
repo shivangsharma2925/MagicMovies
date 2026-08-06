@@ -23,7 +23,7 @@ type Movie struct {
 	ReleaseDate     string             `bson:"release_date" json:"release_date"`
 	Tagline         string             `bson:"tagline" json:"tagline"`
 	Runtime         int                `bson:"runtime" json:"runtime"`
-	VoteAvg         float64            `bson:"vote_average" json:"vote_average"`
+	VoteAvg         float64            `bson:"vote_average" json:"vote_average"` 
 }
 
 type Genre struct {
@@ -57,7 +57,6 @@ type TMDBFindResponse struct {
 type TMDBMovieDetails struct {
 	Title      string  `json:"title"`
 	PosterPath string  `json:"poster_path"`
-	Rating     float64 `json:"vote_average"`
 	Genres     []struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
@@ -86,13 +85,13 @@ type MovieData struct {
 	Genres    []Genre
 	YoutubeID string
 	Ranking   Ranking
-	IsAdult     bool   `json:"adult"`
-	Overview    string `json:"overview"`
-	ReleaseDate string `json:"release_date"`
-	Tagline     string `json:"tagline"`
-	Runtime     int    `json:"runtime"`
-	BackdropPath string  `json:"backdrop_path"`
-	VoteAvg      float64 `json:"vote_average"`
+	IsAdult     bool   
+	Overview    string 
+	ReleaseDate string 
+	Tagline     string 
+	Runtime     int    
+	BackdropPath string
+	VoteAvg      float64
 }
 
 type JobStatus string

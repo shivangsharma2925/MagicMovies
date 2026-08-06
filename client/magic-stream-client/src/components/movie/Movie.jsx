@@ -10,6 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useWatchlists } from "../../hook/UseWatchlists";
 import AddToWatchlistPicker from "../Watchlist/AddToWatchlistPicker";
+import { slugify } from "../../utils/SlugifyTitle";
 import "../../styling/Movie.css";
 
 const Movie = ({ movie }) => {
@@ -33,7 +34,7 @@ const Movie = ({ movie }) => {
     <div className="col-6 col-md-4 col-lg-3 mb-4" id={movie._id}>
       <div className="movie-card-dark h-100">
         <Link
-          to={`/stream/${movie.youtube_id ?? null}`}
+          to={`/stream/${slugify(movie.title)}/${movie.imdb_id}`}
           style={{ textDecoration: "none", color: "inherit" }}
         >
           <div className="movie-poster">

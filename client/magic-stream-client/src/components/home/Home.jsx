@@ -14,6 +14,8 @@ import SearchBar from "./SearchBar";
 import { Carousel } from "../movieCarousel/Carousel";
 import MovieCarousel from "../movieCarousel/MovieCarousel";
 import HeroSection from "../heroSection/HeroSection";
+import { Helmet } from "react-helmet-async";
+import logo from "../../assets/logo.png";
 import "../../styling/Home.css";
 
 const Home = () => {
@@ -24,6 +26,12 @@ const Home = () => {
   const socket = UseWebSocket();
 
   let message = "";
+
+  const title = "Magic Stream";
+  const description = `Watch movies trailer and explore movie details, add movies to watchlists and see personalized recommended movies.`;
+  const pageUrl = `https://www.magicmovies.site/`;
+  // const pageUrl = `http://localhost:3000/`;
+  const imageUrl = logo;
 
   /*
     The data in the react query movies array is stored as an set of all the pages we have ordered so far from server,
@@ -74,10 +82,7 @@ const Home = () => {
   });
 
   /* fetching hero movies */
-  const {
-    data: heroMovies,
-    isLoading: heroLoading,
-  } = useQuery({
+  const { data: heroMovies, isLoading: heroLoading } = useQuery({
     queryKey: ["heroMovies"],
 
     queryFn: () => getHeroMovies(),
@@ -122,8 +127,88 @@ const Home = () => {
     return Carousel({ heroMovies });
   }, [heroMovies]);
 
+  //for JSON-LD (SEO)
+  const HomeStructuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://www.magicmovies.site/#website",
+        url: "https://www.magicmovies.site/",
+        name: "Magic Stream",
+        alternateName: "Magic Movies",
+        description:
+          "Discover movie trailers, explore new releases, browse by genre, and find your next movie.",
+        inLanguage: "en",
+        publisher: {
+          "@id": "https://www.magicmovies.site/#organization",
+        },
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://www.magicmovies.site/#organization",
+        name: "Magic Stream",
+        url: "https://www.magicmovies.site/",
+        logo: {
+          "@type": "ImageObject",
+          "@id": "https://www.magicmovies.site/#logo",
+          url: "https://www.magicmovies.site/logo.png",
+          contentUrl: "https://www.magicmovies.site/logo.png",
+          width: 512,
+          height: 512,
+        },
+      },
+      {
+        "@type": "ItemList",
+        "@id": "https://www.magicmovies.site/#featured-movies",
+        name: "Featured Movies",
+        itemListOrder: "https://schema.org/ItemListOrderAscending",
+        numberOfItems: heroMovies?.excellent.length ?? 0,
+        itemListElement: (heroMovies?.excellent?.slice(0, 10) ?? []).map(
+          (movie, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            name: movie.title,
+            url: `https://www.magicmovies.site/movie/detail/${movie.imdb_id}`,
+          }),
+        ),
+      },
+    ],
+  };
+
   return (
     <>
+      {!heroLoading && (
+        <Helmet>
+          <title>{title}</title>
+
+          {/* Search engine description */}
+          <meta name="description" content={description} />
+
+          {/* Search engine crawling */}
+          <meta name="robots" content="index, follow" />
+
+          {/* Main page URL */}
+          <link rel="canonical" href={pageUrl} />
+
+          {/* Open Graph - control how page appears when shared on platforms such as WhatsApp, Facebook, LinkedIn, etc */}
+          <meta property="og:title" content={title} />
+          <meta property="og:description" content={description} />
+          <meta property="og:image" content={imageUrl} />
+          <meta property="og:url" content={pageUrl} />
+          <meta property="og:type" content="video.movie" />
+          <meta property="og:site_name" content="Magic Stream" />
+
+          {/* JSON-LD(JavaScript Object Notation for Linked Data), json like format useful for web crawlers and SEO */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(HomeStructuredData),
+            }}
+          />
+        </Helmet>
+      )}
+
       {hasNewMovies && (
         <div className="new-movies-banner">
           <button

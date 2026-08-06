@@ -16,7 +16,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import UseAuth from "../../hook/UseAuth";
 import axiosConfig from "../../api/axiosConfigwocredential";
-import logo from "../../../logo.png";
+import logo from "../../assets/logo.png";
 import SearchBar from "../home/SearchBar";
 import { useQuery } from "@tanstack/react-query";
 import useDebounce from "../../hook/UseDebounce";

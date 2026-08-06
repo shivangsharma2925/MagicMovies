@@ -4,7 +4,8 @@ import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import axiosConfig from "../../api/axiosConfig";
 import { Link, useNavigate } from "react-router-dom";
-import logo from "../../../logo.png";
+import logo from "../../assets/logo.png";
+import PageTitle from "../../utils/PageTitle";
 import "../../styling/LoginRegister.css";
 //  /MagicStreamLogo.png';
 
@@ -101,6 +102,7 @@ const Register = () => {
 
   return (
     <Container className="login-container d-flex align-items-center justify-content-center my-4">
+      <PageTitle title="Register Account" />
       <div className="login-card" style={{ maxWidth: 400 }}>
         <div className="text-center mb-4">
           <img src={logo} alt="Logo" width={60} className="mb-2" />
