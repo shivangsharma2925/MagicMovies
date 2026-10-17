@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -112,7 +112,7 @@ func (jc *JobController) RetryJob(c *gin.Context) {
 
 func (jc *JobController) AskAiImdb(c *gin.Context) {
 
-	ctx, cancel := context.WithTimeout(c, 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
 	role, err := utilities.GetRolefromContect(c)
@@ -132,7 +132,8 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 
 	type AiResponse struct {
 		MovieName string `json:"movie_name"`
-		ImdbId    string `json:"imdbid"`
+		// ImdbId    string `json:"imdbid"`
+		MovieYear string `json:"year"`
 	}
 
 	var AiImdbRequest struct {
@@ -170,7 +171,7 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 
 	// model := client.GenerativeModel("gemini-2.5-flash")
 
-	promptBytes, err := os.ReadFile("prompts/imdb_prompt.txt")
+	promptBytes, err := os.ReadFile("prompts/imdb_Prompt_v3.txt")
 	if err != nil {
 		jc.dbLogger.Alerts("ERROR", "Error in executing command", gin.H{
 			"endpoint": "/AskAiImdb",
@@ -193,7 +194,7 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 	}
 
 	rawText := ""
-	modelArray := []string{"gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview",}
+	modelArray := []string{"gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-3-flash-preview"}
 
 	for _, model := range modelArray {
 
@@ -211,10 +212,11 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 
 		if err != nil {
 			errText := strings.ToLower(err.Error())
-			if 	strings.Contains(errText, "quota") ||
+			if strings.Contains(errText, "quota") ||
 				strings.Contains(errText, "resource_exhausted") ||
-				strings.Contains(errText, "429") {
-				jc.dbLogger.Alerts("ERROR", "Quota exceeded", gin.H{
+				strings.Contains(errText, "429") ||
+				strings.Contains(errText, "deadline") {
+				jc.dbLogger.Alerts("WARN", "Model failed or timed out, trying next", gin.H{
 					"endpoint": "/AskAiImdb",
 					"error":    err.Error(),
 					"model":    model,
@@ -239,20 +241,19 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 		c.JSON(http.StatusOK, AiImdbResponse)
 		return
 	}
-
 	rawText = strings.TrimPrefix(rawText, "```json")
 	rawText = strings.TrimPrefix(rawText, "```")
 	rawText = strings.TrimSuffix(rawText, "```")
 	rawText = strings.TrimSpace(rawText)
-
+	
 	var parsed struct {
 		Invalid bool `json:"invalid"`
 		Movies  []struct {
 			MovieName string `json:"movie_name"`
-			ImdbId    string `json:"imdbid"`
+			MovieYear int `json:"year"`
 		} `json:"movies"`
 	}
-
+	
 	if err := json.Unmarshal([]byte(rawText), &parsed); err != nil {
 		jc.dbLogger.Alerts("ERROR", "Invalid JSON from AI", gin.H{
 			"endpoint": "/AskAiImdb",
@@ -270,26 +271,27 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 		return
 	}
 
-	imdbPattern := regexp.MustCompile(`^tt\d+$`)
+	// urlPattern := regexp.MustCompile(`tt\d+`)
+	// imdbPattern := regexp.MustCompile(`^tt\d+$`)
 	seen := map[string]bool{}
 
 	for _, movie := range parsed.Movies {
 		movieName := strings.TrimSpace(movie.MovieName)
-		imdbID := strings.TrimSpace(movie.ImdbId)
+		year := strconv.Itoa(movie.MovieYear)
 
-		if !imdbPattern.MatchString(imdbID) {
+		// if imdbID == "" {
+		// 	continue
+		// }
+
+		if seen[movieName] {
 			continue
 		}
 
-		if seen[imdbID] {
-			continue
-		}
-
-		seen[imdbID] = true
+		seen[movieName] = true
 
 		AiImdbResponse.Ids = append(AiImdbResponse.Ids, AiResponse{
 			MovieName: movieName,
-			ImdbId:    imdbID,
+			MovieYear: year,
 		})
 	}
 

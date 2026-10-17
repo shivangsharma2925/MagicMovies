@@ -20,3 +20,7 @@ Client/magic-stream-client/.env
 Server/MagicStreamServer/.env
 .env
 *.env
+
+# notes
+.md
+.txt

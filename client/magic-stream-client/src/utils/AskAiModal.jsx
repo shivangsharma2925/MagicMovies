@@ -3,12 +3,12 @@ import { Modal } from "react-bootstrap";
 import useAxiosPrivate from "../hook/UseAxiosPrivate";
 import "../styling/AI_related.css";
 
-const AskAiBtn = ({ onUseIds }) => {
+const AskAiBtn = () => {
   const EXAMPLES = [
-    "Give me IMDB IDs for the Fast & Furious series",
-    "IMDB ID of John Wick Chapter 2",
-    "All Marvel Spider-Man movies IMDB IDs",
-    "Christopher Nolan's top 5 movies IMDB IDs",
+    "Give me details for the Fast & Furious series",
+    "Movie Info of John Wick Chapter 2",
+    "All Marvel Spider-Man movies",
+    "Christopher Nolan's top 5 movies",
   ];
 
   const [show, setShow] = useState(false);
@@ -51,11 +51,27 @@ const AskAiBtn = ({ onUseIds }) => {
     }
   };
 
-  const handleUseIds = () => {
-    setShowExamples(true);
-    if (result?.ids) {
-      onUseIds(result.ids.map((r) => r.imdbid).join(", "));
+  const handleUseIds = async () => {
+    try {
+      const movieDetails = result.ids.map((movie) => ({
+        movie_name: movie.movie_name,
+        movie_year: String(movie.year ?? ""),
+      }));
+
+      await axiosPrivate.post("/addmovieai", {
+        movie_details: movieDetails,
+      });
+
       handleClose();
+    } catch (error) {
+      setResult((prev) => ({
+        ...prev,
+        addError: true,
+      }));
+      console.log(error);
+    } finally {
+      setLoading(false);
+      setShowExamples(true);
     }
   };
 
@@ -76,37 +92,40 @@ const AskAiBtn = ({ onUseIds }) => {
           {/* Header */}
           <div className="ai-modal-header">
             <div className="ai-modal-title">
-              <span className="ask-ai-icon">✦</span> AI IMDB Finder
+              <span className="ask-ai-icon">✦</span> AI Movie(s) Finder
             </div>
             <button className="ai-modal-close" onClick={handleClose}>
               ×
             </button>
           </div>
           <p className="ai-modal-sub">
-            Describe the movies you want and AI will find the IMDB IDs for you.
+            Describe the movies you want and AI will find the movie details for
+            you.
           </p>
 
           {/* Examples */}
-          {showExamples && <div id="example-section">
-            <p className="ai-section-label">Try an example</p>
-            <div className="ai-examples">
+          {showExamples && (
+            <div id="example-section">
+              <p className="ai-section-label">Try an example</p>
+              <div className="ai-examples">
                 {EXAMPLES.map((ex) => (
-                <button
+                  <button
                     key={ex}
                     className="ai-example-chip"
                     onClick={() => setPrompt(ex)}
-                >
+                  >
                     {ex}
-                </button>
+                  </button>
                 ))}
+              </div>
             </div>
-          </div>}
+          )}
 
           {/* Prompt input */}
           <textarea
             className="ai-prompt-input"
             rows={3}
-            placeholder="e.g. Give me IMDB IDs for the Mission Impossible series..."
+            placeholder="e.g. Give me details for the Mission Impossible series..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) =>
@@ -133,7 +152,7 @@ const AskAiBtn = ({ onUseIds }) => {
               </>
             ) : (
               <>
-                <span className="ask-ai-icon">✦</span> Generate IMDB IDs
+                <span className="ask-ai-icon">✦</span> Bring Details
               </>
             )}
           </button>
@@ -152,11 +171,11 @@ const AskAiBtn = ({ onUseIds }) => {
                       <span className="ai-movie-name">
                         {id.movie_name || "Unknown"}
                       </span>
-                      <span className="ai-movie-imdb">{id.imdbid}</span>
+                      <span className="ai-movie-year">{id.year}</span>
                     </div>
                     <span className="ai-id-pill">
                       <a
-                        href={`https://www.imdb.com/title/${id.imdbid}`}
+                        href={`https://www.google.com/search?q=site%3Aimdb.com%2Ftitle%2F+${id.movie_name}+${id.year}&btnI=1`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="ai-verify-link"
@@ -166,10 +185,13 @@ const AskAiBtn = ({ onUseIds }) => {
                     </span>
                   </div>
                 ))}
-              <div className="ai-context-box">Not Satisfied ? Try adding more Context like<em> Year, Genre, Cast, etc</em></div>
+                <div className="ai-context-box">
+                  Not Satisfied ? Try adding more Context like
+                  <em> Year, Genre, Cast, etc</em>
+                </div>
               </div>
               <button className="btn-ai-use" onClick={handleUseIds}>
-                Use these IDs →
+                Add these movies →
               </button>
             </div>
           )}

@@ -465,9 +465,9 @@ func (uc *UserController) DeleteAccount(c *gin.Context) {
 	}
 
 	uc.dbLogger.Log("ACCOUNT", "user deleted", gin.H{
-			"endpoint": "/DeleteAccount",
-			"user_id":  userId,
-		},
+		"endpoint": "/DeleteAccount",
+		"user_id":  userId,
+	},
 	)
 
 	c.JSON(http.StatusOK, gin.H{
@@ -550,8 +550,71 @@ func (uc *UserController) VerifyEmail(c *gin.Context) {
 
 	uc.otpService.ClearAttempts(ctx, req.UserID)
 
+	var user models.User
+
+	err = usercollection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Something went wrong, try again!"})
+		return
+	}
+
+	token, refreshToken, err := utilities.GenerateAllTokens(user.Email, user.FirstName, user.LastName, user.Role, user.UserID)
+	if err != nil {
+		uc.dbLogger.Alerts("ERROR", "Token generation failed", gin.H{
+			"endpoint": "/VerifyEmail",
+			"user_id":  user.UserID,
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+
+	err = uc.UpdateAllTokens(user.UserID, refreshToken, c)
+	if err != nil {
+		uc.dbLogger.Alerts("ERROR", "Token update failed", gin.H{
+			"endpoint": "/VerifyEmail",
+			"user_id":  user.UserID,
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal error"})
+		return
+	}
+
+	uc.dbLogger.Log("ACCOUNT", "User logged in successfully", gin.H{
+		"endpoint": "/VerifyEmail",
+		"user_id":  user.UserID,
+	})
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "access_token",
+		Value:    token,
+		Path:     "/",
+		MaxAge:   1800,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
+	http.SetCookie(c.Writer, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/",
+		MaxAge:   24 * 60 * 60,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: http.SameSiteNoneMode,
+	})
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Email verified successfully",
+		"user": models.UserResponse{
+			Email:           user.Email,
+			UserId:          user.UserID,
+			FirstName:       user.FirstName,
+			LastName:        user.LastName,
+			Role:            user.Role,
+			FavouriteGenres: user.FavouriteGenres,
+		},
 	})
 }
 

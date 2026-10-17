@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"slices"
@@ -20,6 +21,7 @@ import (
 	dblogger "github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/logger"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/models"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/queue"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/services"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/utilities"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -928,6 +930,156 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 		"added":   added,
 		"skipped": skipped,
 	})
+}
+
+func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
+	role, err := utilities.GetRolefromContect(c)
+	if err != nil {
+		mc.dbLogger.Alerts("ERROR", "Error in getting role", gin.H{
+			"endpoint": "/AddMovie",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Internal error"})
+		return
+	}
+
+	if role != "ADMIN" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User must be Admin to access this functionality"})
+		return
+	}
+
+	var req struct {
+		MovieDetails []struct {
+			MovieName string `json:"movie_name"`
+			MovieYear string `json:"movie_year"`
+		} `json:"movie_details"`
+	}
+
+	if err := c.BindJSON(&req); err != nil {
+		mc.dbLogger.Alerts("ERROR", "Bind error", gin.H{
+			"endpoint": "/AddMovieViaAI",
+			"error":    err.Error(),
+		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		return
+	}
+
+	if len(req.MovieDetails) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Movies required"})
+		return
+	}
+
+	if len(req.MovieDetails) > 10 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Too many IDs"})
+		return
+	}
+
+	jobCollection := mc.db.Collection("jobs")
+
+	skipped := []string{}
+	added := []string{}
+
+	for _, movies := range req.MovieDetails {
+
+		if len(strings.Trim(movies.MovieName, "")) == 0 {
+			continue
+		}
+
+		if len(strings.Trim(movies.MovieYear, "")) == 0 {
+			continue
+		}
+
+		tmdbID, err := mc.GetTMDBIDByMovieName(movies.MovieName, movies.MovieYear, c)
+		if err != nil {
+			continue
+		}
+
+		tmdbIDStr := strconv.Itoa(tmdbID)
+		job := models.Job{
+			ImdbID:    tmdbIDStr,
+			Status:    models.StatusPending,
+			Attempts:  0,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+
+		_, err = jobCollection.InsertOne(context.Background(), job)
+		if err != nil {
+			continue
+		}
+
+		// queue.PushToQueue(imdbID)
+		err = queue.EnqueueMovie(tmdbIDStr)
+
+		if err != nil {
+			mc.dbLogger.Alerts("ERROR", "Error in adding movies to queue", gin.H{
+				"error":    err,
+				"tmdbID":   tmdbID,
+				"endpoint": "/AddMovieViaAI",
+			})
+			skipped = append(skipped, movies.MovieName)
+			continue
+		}
+		// queue.InspectMovieQueue(redisOpt)
+		added = append(added, movies.MovieName)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"added":   added,
+		"skipped": skipped,
+	})
+
+}
+
+func (mc *MovieController) GetTMDBIDByMovieName(movieName string, movieYear string, ctx context.Context) (int, error) {
+	var tmdbID int
+
+	// url := fmt.Sprintf(
+	// 	"https://api.themoviedb.org/3/search/movie?query=%s&year=%s&api_key=%s",
+	// 	movieName,
+	// 	movieYear,
+	// 	os.Getenv("TMDB_SECRET_KEY"),
+	// )
+
+	params := url.Values{}
+	params.Set("query", movieName)
+	params.Set("year", movieYear)
+	params.Set("api_key", os.Getenv("TMDB_SECRET_KEY"))
+
+	url := "https://api.themoviedb.org/3/search/movie?" + params.Encode()
+
+	err := utilities.WithRetry(5, ctx, func() error {
+
+		var result models.TMDBFindByMovieName
+
+		err := utilities.DoRequest(ctx, url, &result, services.HttpClient)
+		if err != nil {
+			return err
+		}
+
+		if len(result.MovieResults) == 0 {
+			mc.dbLogger.Alerts("WARN", "No Movie Results found", map[string]any{
+				"endpoint":  "/GetTMDBIDByMovieName",
+				"movieName": movieName,
+			})
+			return nil
+		}
+
+		normalizedMovieName := strings.ToLower(strings.Join(strings.Fields(movieName), ""))
+
+		for _, movie := range result.MovieResults {
+			normalizedMovieResultName := strings.ToLower(strings.Join(strings.Fields(movie.MovieName), ""))
+			normalizedMovieResultYear := strings.Split(movie.MovieYear, "-")[0]
+			if normalizedMovieResultName == normalizedMovieName && movieYear == normalizedMovieResultYear {
+				tmdbID = movie.ID
+				return nil
+			}
+		}
+
+		return nil
+	})
+
+	return tmdbID, err
 }
 
 func (mc *MovieController) AdminReviewUpdate(c *gin.Context) {

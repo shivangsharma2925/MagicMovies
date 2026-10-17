@@ -9,6 +9,7 @@ import (
 type Movie struct {
 	ID              primitive.ObjectID `bson:"_id,omitempty" json:"_id"`
 	ImdbID          string             `bson:"imdb_id" json:"imdb_id" validate:"required"`
+	TmdbID          int                `bson:"tmdb_id" json:"tmdb_id" validate:"required"`
 	Title           string             `bson:"title" json:"title" validate:"required,min=2,max=500"`
 	TitleNormalized string             `bson:"title_normalized,omitempty" json:"-"`
 	SearchTokens    []string           `bson:"search_tokens,omitempty" json:"-"`
@@ -23,7 +24,7 @@ type Movie struct {
 	ReleaseDate     string             `bson:"release_date" json:"release_date"`
 	Tagline         string             `bson:"tagline" json:"tagline"`
 	Runtime         int                `bson:"runtime" json:"runtime"`
-	VoteAvg         float64            `bson:"vote_average" json:"vote_average"` 
+	VoteAvg         float64            `bson:"vote_average" json:"vote_average"`
 }
 
 type Genre struct {
@@ -54,18 +55,27 @@ type TMDBFindResponse struct {
 	} `json:"movie_results"`
 }
 
+type TMDBFindByMovieName struct {
+	MovieResults []struct {
+		ID        int    `json:"id"`
+		MovieName string `json:"title"`
+		MovieYear string `json:"release_date"`
+	} `json:"movie_results"`
+}
+
 type TMDBMovieDetails struct {
-	Title      string  `json:"title"`
-	PosterPath string  `json:"poster_path"`
+	ImdbID     string `json:"imdb_id"`
+	Title      string `json:"title"`
+	PosterPath string `json:"poster_path"`
 	Genres     []struct {
 		ID   int    `json:"id"`
 		Name string `json:"name"`
 	} `json:"genres"`
-	IsAdult     bool   `json:"adult"`
-	Overview    string `json:"overview"`
-	ReleaseDate string `json:"release_date"`
-	Tagline     string `json:"tagline"`
-	Runtime     int    `json:"runtime"`
+	IsAdult      bool    `json:"adult"`
+	Overview     string  `json:"overview"`
+	ReleaseDate  string  `json:"release_date"`
+	Tagline      string  `json:"tagline"`
+	Runtime      int     `json:"runtime"`
 	BackdropPath string  `json:"backdrop_path"`
 	VoteAvg      float64 `json:"vote_average"`
 }
@@ -79,19 +89,20 @@ type TMDBVideoResponse struct {
 }
 
 type MovieData struct {
-	ImdbID string
-	Title     string
-	Poster    string
-	Genres    []Genre
-	YoutubeID string
-	Ranking   Ranking
-	IsAdult     bool   
-	Overview    string 
-	ReleaseDate string 
-	Tagline     string 
-	Runtime     int    
-	BackdropPath string
-	VoteAvg      float64
+	ImdbID       string
+	TmdbID       int
+	// Title        string
+	// Poster       string
+	// Genres       []Genre
+	// YoutubeID    string
+	// Ranking      Ranking
+	// IsAdult      bool
+	// Overview     string
+	// ReleaseDate  string
+	// Tagline      string
+	// Runtime      int
+	// BackdropPath string
+	// VoteAvg      float64
 }
 
 type JobStatus string

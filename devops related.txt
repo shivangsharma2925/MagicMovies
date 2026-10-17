@@ -1,0 +1,59 @@
+steps to create an ec2(elastic compute) instance in aws,
+
+1) create instance and select everything mostly to default, for the network security, add 3 rules,
+	a) port 22 for your own
+	b) port 80 for http for everyone
+	c) port 443 for https for everyone
+2) save the private key which was downloaded earlier to the any path(c/users/shivang/.ssh/.pem file)
+3) open the powershell and then go inside the directory where you saved the .pem file and run this command " ssh -i "magicmovies-server.pem" ec2-user@YOUR_PUBLIC_IP"
+4) Few Linux commands,
+	4.1) Navigation & Exploring,
+		a) pwd = print working directory - prints the current path.
+		b) ls = List - Lists all files and folders in your current directory.
+		c) cd = Change Directory - Moves you into a different folder (like double-clicking a folder on Windows). Eg:) cd folder_name to go inside a folder. Type cd .. to go back up 		one level. Type just cd to jump straight back to your home folder.
+
+	4.2) Creating & Managing Files,
+		a) mkdir = Make Directory - Creates a brand new empty folder. Eg:) mkdir magicmovies creates a folder named magicmovies
+		b) touch = Touch - Creates a blank, empty file. Eg:) touch index.html creates an empty file named index.html
+		c) rm = Remove - Deletes files or folders permanently. Eg:) rm index.html deletes a file. To delete a folder and everything inside it, use rm -rf folder_name.
+		d) cp = Copy - Copies a file from one place to another. Eg:) cp index.html backup.html makes a duplicate.
+		e) mv = Move / Rename - Moves a file to a new folder, OR renames a file. Eg:)mv index.html home.html renames the file. mv home.html magicmovies/ moves it into the folder.
+
+	4.3) Viewing & Searching inside Files,
+		a) cat = Concatenate - Dumps the entire contents of a file directly onto your screen. Perfect for small files Eg:) cat home.html
+		b) less = Less - Opens a file in a scrollable view. Perfect for huge log files. Eg:)less system.log. Use arrow keys to scroll, and press q to exit/quit.
+		c) grep = Global Regular Expression Print - Searches for specific word or text pattern in files. Eg:) grep "err" sys.log will print only the lines containing the word 			"err".
+	
+		d) find = Find - Searches the entire system for files or folders by name. Eg:) find . -name "*.html" searches your current folder (.) for any file ending in .html
+
+	4.4) System Monitoring,
+		a) ps = Process Status - Shows snapshot of programs currently running. Eg:) Type ps aux to see detailed list of every single background process running on your server
+		b) top = Top - A live, dynamic dashboard showing CPU usage, RAM usage, and active tasks like Windows Task Manager. Eg:) Type top. Press q to close it.
+		c) df = Disk Free - Shows how much hard drive storage space you have left. Eg:) Type df -h (the -h makes it "human-readable" in Gigabytes instead of raw bytes).
+		d) free = Free Memory - Shows how much RAM memory is free and used. Eg:) Type free -m to see your RAM usage displayed cleanly in Megabytes.
+
+	4.5)  Internet, Permissions & Admin Power,
+		a) ping = Ping - It will just check whether thr URL is reachable or not. Eg:) ping -c 4 google.com Linux will just send 4 packets and then stop otherwise it will keep on 		pinging forever.
+ 
+		b) curl = Client URL - Downloads data or webpages from the internet straight into your terminal. Eg:) curl https://google.com will download Google's HTML code. curl -I 		https://google.com , The capital -I tells curl to only grab the status headers instead of downloading the whole webpage code.
+
+		c) chmod = Change Mode - Changes the security permissions of a file (who can read, write, or execute it). Eg:) chmod +x script.sh makes a script file executable so it can 		be run as a program
+
+		d) sudo = SuperUser Do - Runs a command with absolute admin/root privileges like "Run as Administrator" in Windows. On a new EC2 instance, your regular user can't install 		software. You must use sudo. Eg:) sudo yum update or sudo apt update to update your server packages
+	
+	4.6) Services related,
+		a) systemctl = system control - manage Services. Eg:) sudo systemctl start nginx ,also sudo is necessary as linux treats all ports below 1024 as priveleged(admin only)
+
+5) There is a few difference between Linux process and services, process are workers that perform some task usually started by the user and dies as soon as they are finished, commands like ls, pwd, etc. Service is the special process that runs continuously in the background and started automatic as soon as ec2 boots up, like sshd, nginx, httpd, etc.
+6) public ips are the one which anyone can access, these are the one through which computer connect to anyone on internet. Private ips are the one which are unique in the local network and can be same outise the local network, these are the one aws uses to communicate between ec2 instances in the same account.
+7) difference between aws security groups, linux firewall and nginx,
+	a) Security Groups - These are the virtual firewall implemented by the aws. It lives outside the ec2 instance, at aws network level. It inspects the traffic based on rules before 	traffic even touches the virtual machine/ec2 instance.
+
+	b) Linux Firewall - These are the firewall implemented by the Linux OS. It lives inside the OS of ec2 instance.
+
+	c) nginx - It is not a firewall at all, it is just an application. Specifically it is an web server or reverse proxy service. It lived inside the user space. It simply provides the 	resources based on the request.
+8) Reverse Proxy - A reverse proxy is an application that sits between internet users and your backend web servers. When a user requests a website, Nginx receives the request first and silently forwards it to the correct internal application running on your server. The user never communicates with your backend code directly
+	8.1) Reverse Proxy Working -
+		a) Problem without Reverse Proxy - This exposes your internal app port to the internet. It requires you to open that internal Port(5000) in your AWS Security Group.It looks 		ugly and unprofessional to users.
+		b) With Reverse Proxy - nginx running on port 80 receives the request. It reads the URL path and forwards the request to the mapped internal port where backend code is 		running and returns the data to Nginx and Nginx to user.
+	8.2) Reverse Proxy advantages - Security, handling static data, SSL/HTTPS Encryption, routing traffic based on url to different ports

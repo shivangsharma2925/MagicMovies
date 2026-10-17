@@ -66,6 +66,7 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	})
 
 	// PROCESS MOVIE
+	
 	err := p.movieService.ProcessMovie(imdbID, ctx)
 
 	if err != nil {

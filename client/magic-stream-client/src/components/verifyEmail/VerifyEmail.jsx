@@ -4,12 +4,14 @@ import axiosConfig from "../../api/axiosConfig";
 import ResendOTP from "./ResendOTP";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
+import UseAuth from "../../hook/UseAuth";
 import Container from "react-bootstrap/Container";
 import PageTitle from "../../utils/PageTitle";
 import "../../styling/LoginRegister.css";
 
 export default function VerifyEmail() {
   const { userId } = useParams();
+  const { setAuth } = UseAuth();
   const navigate = useNavigate();
 
   const [otp, setOtp] = useState(new Array(6).fill(""));
@@ -40,7 +42,8 @@ export default function VerifyEmail() {
 
       setMessage(res.data.message);
 
-      setTimeout(() => navigate("/login"), 1000);
+      setAuth(res.data.user);
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.error || "Verification failed");
     } finally {
@@ -82,6 +85,7 @@ export default function VerifyEmail() {
 
     const lastIndex = Math.min(pasted.length, 5);
     inputRefs.current[lastIndex]?.focus();
+    handleVerify(newOtp);
   };
 
   return (

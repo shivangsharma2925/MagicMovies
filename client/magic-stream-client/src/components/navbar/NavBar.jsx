@@ -38,12 +38,21 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [selectedGenre, setSelectedGenre] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
 
   const inputRef = useRef(null);
   const acctRef = useRef(null);
   const genreRef = useRef(null);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const updateScrollState = () => setIsScrolled(window.scrollY > 0);
+
+    updateScrollState();
+    window.addEventListener("scroll", updateScrollState, { passive: true });
+    return () => window.removeEventListener("scroll", updateScrollState);
+  }, []);
 
   const initials = auth
     ? `${auth.first_name?.[0] ?? ""}${auth.last_name?.[0] ?? ""}`.toUpperCase()
@@ -130,7 +139,9 @@ export default function Header() {
 
   return (
     <>
-      <nav className="app-navbar justify-content-between">
+      <nav
+        className={`app-navbar justify-content-between${isScrolled ? " is-scrolled" : ""}`}
+      >
         {/* Brand */}
         <NavLink to="/" className="nb-brand-left">
           <img src={logo} alt="Magic Stream" className="nb-logo" />

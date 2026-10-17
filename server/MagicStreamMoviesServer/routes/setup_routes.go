@@ -66,6 +66,8 @@ func SetupRoutes(
 	api.GET("/movie/:imdb_id", ipLimiter.IPMiddleware(), movieController.GetMovie)
 	api.GET("/category/:title", ipLimiter.IPMiddleware(), movieController.GetByCategory)
 
+	api.GET("/UpdateMovies", ipLimiter.IPMiddleware(), movieServices.UpdateMovies)
+
 	// Protected routes
 	protected := api.Group("/")
 	protected.Use(authMiddleware)
@@ -75,6 +77,7 @@ func SetupRoutes(
 		protected.POST("/delete-account", userController.DeleteAccount)
 
 		protected.POST("/addmovie", movieController.AddMovie)
+		protected.POST("/addmovieai", movieController.AddMovieViaAI)
 		protected.GET("/recommendedmovies", movieController.GetRecommendedMovies)
 		protected.POST("/updatereview/:imdb_id", movieController.AdminReviewUpdate)
 

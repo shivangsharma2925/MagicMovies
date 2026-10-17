@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Button from "react-bootstrap/Button";
 import Container from "react-bootstrap/Container";
 import Form from "react-bootstrap/Form";
 import axiosConfig from "../../api/axiosConfig";
+import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import UseAuth from "../../hook/UseAuth";
 import PageTitle from "../../utils/PageTitle";
@@ -17,11 +18,28 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [highlightForgot, setHighlightForgot] = useState(false);
 
+  const axiosPrivate = useAxiosPrivate();
   const { setAuth } = UseAuth();
 
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const { data } = await axiosPrivate.get("/profile/me");
+
+        setAuth(data);
+        navigate(from, { replace: true });
+      } catch (err) {
+        console.log(err);
+        setAuth(null);
+      }
+    };
+
+    fetchUser();
+  }, [axiosPrivate, from, navigate, setAuth]);
 
   async function handleSubmit(e) {
     e.preventDefault();

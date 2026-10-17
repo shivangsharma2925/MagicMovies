@@ -76,7 +76,7 @@ const Register = () => {
       setMessage(res?.data?.message);
       setTimeout(() => {
         navigate(`/verify-email/${res.data.user_id}`);
-      }, 3000);
+      }, 4000);
     } catch (err) {
       console.log(err);
       setError(

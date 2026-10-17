@@ -17,14 +17,14 @@ func createTTLIndex(ctx context.Context, db *MongoDB) error {
 	logsIndex := mongo.IndexModel{
 		Keys: bson.M{"timestamp": 1},
 		Options: options.Index().
-			SetExpireAfterSeconds(86400).
+			SetExpireAfterSeconds(3600).
 			SetName("logs_ttl_index"),
 	}
 
 	alertsIndex := mongo.IndexModel{
 		Keys: bson.M{"timestamp": 1},
 		Options: options.Index().
-			SetExpireAfterSeconds(3600).
+			SetExpireAfterSeconds(129600).
 			SetName("alerts_ttl_index"),
 	}
 
