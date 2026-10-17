@@ -34,13 +34,14 @@ const SearchBar = ({
         }}
       />
 
-      <button
+      {(search.length)?
+      (<button
         className="nb-search-clear"
         onClick={()=>{setSearch(""); setShowSuggestions(false);}}
         aria-label="clear search"
       >
         <FontAwesomeIcon icon={faXmark} />
-      </button>
+      </button>):null}
     </div>
   );
 };

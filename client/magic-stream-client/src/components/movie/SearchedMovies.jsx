@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlay} from "@fortawesome/free-solid-svg-icons";
-import { slugify } from "../../utils/SlugifyTitle";
 
 export default function SearchedMovies({ movies = [], search, setSearchOpen, setSearch, setShowSuggestions }) {
   const navigate = useNavigate();
@@ -22,7 +21,7 @@ export default function SearchedMovies({ movies = [], search, setSearchOpen, set
               <div
                 key={movie._id}
                 className="sm-card"
-                onClick={() => {navigate(`/stream/${slugify(movie.title)}/${movie.imdb_id}`); setSearchOpen(false); setSearch(""); setShowSuggestions(false);}}
+                onClick={() => {navigate(`/movie/detail/${movie.imdb_id}`); setSearchOpen(false); setSearch(""); setShowSuggestions(false);}}
               >
                 <div className="sm-poster">
                   <img src={movie.poster_path} alt={movie.title} loading="lazy" />

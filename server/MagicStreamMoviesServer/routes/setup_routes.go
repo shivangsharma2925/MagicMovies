@@ -66,7 +66,8 @@ func SetupRoutes(
 	api.GET("/movie/:imdb_id", ipLimiter.IPMiddleware(), movieController.GetMovie)
 	api.GET("/category/:title", ipLimiter.IPMiddleware(), movieController.GetByCategory)
 
-	api.GET("/UpdateMovies", ipLimiter.IPMiddleware(), movieServices.UpdateMovies)
+	// Used when some bulk updates on movie collection needs to be done
+	// api.GET("/UpdateMovies", ipLimiter.IPMiddleware(), movieServices.UpdateMovies)
 
 	// Protected routes
 	protected := api.Group("/")

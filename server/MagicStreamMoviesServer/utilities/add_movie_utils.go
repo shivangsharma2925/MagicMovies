@@ -121,21 +121,21 @@ func MapToSchema(data *models.MovieData) *models.Movie {
 	return &models.Movie{
 		ImdbID:          data.ImdbID,
 		TmdbID:          data.TmdbID,
-		// Title:           data.Title,
-		// TitleNormalized: NormalizeText(data.Title),
-		// SearchTokens:    GenerateSearchTokens(data.Title),
-		// PosterPath:      data.Poster,
-		// BackdropPath:    data.BackdropPath,
-		// YouTubeID:       data.YoutubeID,
-		// Genre:           data.Genres,
-		// AdminReview:     "", // default empty
-		// Ranking:         data.Ranking,
-		// IsAdult:         data.IsAdult,
-		// Overview:        data.Overview,
-		// ReleaseDate:     data.ReleaseDate,
-		// Tagline:         data.Tagline,
-		// Runtime:         data.Runtime,
-		// VoteAvg:         data.VoteAvg,
+		Title:           data.Title,
+		TitleNormalized: NormalizeText(data.Title),
+		SearchTokens:    GenerateSearchTokens(data.Title),
+		PosterPath:      data.Poster,
+		BackdropPath:    data.BackdropPath,
+		YouTubeID:       data.YoutubeID,
+		Genre:           data.Genres,
+		AdminReview:     "", // default empty
+		Ranking:         data.Ranking,
+		IsAdult:         data.IsAdult,
+		Overview:        data.Overview,
+		ReleaseDate:     data.ReleaseDate,
+		Tagline:         data.Tagline,
+		Runtime:         data.Runtime,
+		VoteAvg:         data.VoteAvg,
 	}
 }
 

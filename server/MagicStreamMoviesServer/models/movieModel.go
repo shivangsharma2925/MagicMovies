@@ -91,18 +91,18 @@ type TMDBVideoResponse struct {
 type MovieData struct {
 	ImdbID       string
 	TmdbID       int
-	// Title        string
-	// Poster       string
-	// Genres       []Genre
-	// YoutubeID    string
-	// Ranking      Ranking
-	// IsAdult      bool
-	// Overview     string
-	// ReleaseDate  string
-	// Tagline      string
-	// Runtime      int
-	// BackdropPath string
-	// VoteAvg      float64
+	Title        string
+	Poster       string
+	Genres       []Genre
+	YoutubeID    string
+	Ranking      Ranking
+	IsAdult      bool
+	Overview     string
+	ReleaseDate  string
+	Tagline      string
+	Runtime      int
+	BackdropPath string
+	VoteAvg      float64
 }
 
 type JobStatus string
