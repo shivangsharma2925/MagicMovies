@@ -990,7 +990,7 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 		}
 
 		tmdbID, err := mc.GetTMDBIDByMovieName(movies.MovieName, movies.MovieYear, c)
-		if err != nil {
+		if err != nil || tmdbID == 0 {
 			continue
 		}
 
@@ -1046,13 +1046,13 @@ func (mc *MovieController) GetTMDBIDByMovieName(movieName string, movieYear stri
 	params.Set("year", movieYear)
 	params.Set("api_key", os.Getenv("TMDB_SECRET_KEY"))
 
-	url := "https://api.themoviedb.org/3/search/movie?" + params.Encode()
+	apiURL := "https://api.themoviedb.org/3/search/movie?" + params.Encode()
 
 	err := utilities.WithRetry(5, ctx, func() error {
 
 		var result models.TMDBFindByMovieName
 
-		err := utilities.DoRequest(ctx, url, &result, services.HttpClient)
+		err := utilities.DoRequest(ctx, apiURL, &result, services.HttpClient)
 		if err != nil {
 			return err
 		}
@@ -1062,7 +1062,7 @@ func (mc *MovieController) GetTMDBIDByMovieName(movieName string, movieYear stri
 				"endpoint":  "/GetTMDBIDByMovieName",
 				"movieName": movieName,
 			})
-			return nil
+			return errors.New("no result found")
 		}
 
 		normalizedMovieName := strings.ToLower(strings.Join(strings.Fields(movieName), ""))
