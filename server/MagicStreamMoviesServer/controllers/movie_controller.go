@@ -981,16 +981,26 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 
 	for _, movies := range req.MovieDetails {
 
-		if len(strings.Trim(movies.MovieName, "")) == 0 {
+		movieName := strings.TrimSpace(movies.MovieName)
+		movieYear := strings.TrimSpace(movies.MovieYear)
+		if movieName == "" {
 			continue
 		}
 
-		if len(strings.Trim(movies.MovieYear, "")) == 0 {
-			continue
+		if movieYear != "" {
+			if _, err := strconv.Atoi(movieYear); err != nil || len(movieYear) != 4 {
+				movieYear = ""
+			}
 		}
 
-		tmdbID, err := mc.GetTMDBIDByMovieName(movies.MovieName, movies.MovieYear, c)
+		tmdbID, err := mc.GetTMDBIDByMovieName(movieName, movieYear, c)
 		if err != nil || tmdbID == 0 {
+			mc.dbLogger.Alerts("ERROR", "Error in fetching movie through movie name and year", gin.H{
+				"error":    err,
+				"tmdbID":   tmdbID,
+				"endpoint": "/AddMovieViaAI",
+			})
+			skipped = append(skipped, movieName)
 			continue
 		}
 
@@ -1032,54 +1042,54 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 }
 
 func (mc *MovieController) GetTMDBIDByMovieName(movieName string, movieYear string, ctx context.Context) (int, error) {
-	var tmdbID int
-
-	// url := fmt.Sprintf(
-	// 	"https://api.themoviedb.org/3/search/movie?query=%s&year=%s&api_key=%s",
-	// 	movieName,
-	// 	movieYear,
-	// 	os.Getenv("TMDB_SECRET_KEY"),
-	// )
+	movieName = strings.TrimSpace(movieName)
+	movieYear = strings.TrimSpace(movieYear)
+	if movieName == "" {
+		return 0, errors.New("movie name is required")
+	}
+	apiKey := strings.TrimSpace(os.Getenv("TMDB_SECRET_KEY"))
+	if apiKey == "" {
+		return 0, errors.New("TMDB_SECRET_KEY is not configured")
+	}
 
 	params := url.Values{}
 	params.Set("query", movieName)
 	params.Set("year", movieYear)
-	params.Set("api_key", os.Getenv("TMDB_SECRET_KEY"))
-
+	params.Set("api_key", apiKey)
 	apiURL := "https://api.themoviedb.org/3/search/movie?" + params.Encode()
 
+	var result models.TMDBFindByMovieName
 	err := utilities.WithRetry(5, ctx, func() error {
-
-		var result models.TMDBFindByMovieName
-
-		err := utilities.DoRequest(ctx, apiURL, &result, services.HttpClient)
-		if err != nil {
-			return err
-		}
-
-		if len(result.MovieResults) == 0 {
-			mc.dbLogger.Alerts("WARN", "No Movie Results found", map[string]any{
-				"endpoint":  "/GetTMDBIDByMovieName",
-				"movieName": movieName,
-			})
-			return errors.New("no result found")
-		}
-
-		normalizedMovieName := strings.ToLower(strings.Join(strings.Fields(movieName), ""))
-
-		for _, movie := range result.MovieResults {
-			normalizedMovieResultName := strings.ToLower(strings.Join(strings.Fields(movie.MovieName), ""))
-			normalizedMovieResultYear := strings.Split(movie.MovieYear, "-")[0]
-			if normalizedMovieResultName == normalizedMovieName && movieYear == normalizedMovieResultYear {
-				tmdbID = movie.ID
-				return nil
-			}
-		}
-
-		return nil
+		return utilities.DoRequest(ctx, apiURL, &result, services.HttpClient)
 	})
+	if err != nil {
+		return 0, err
+	}
 
-	return tmdbID, err
+	if len(result.MovieResults) == 0 {
+		mc.dbLogger.Alerts("WARN", "No Movie Results found", map[string]any{
+			"endpoint":  "/GetTMDBIDByMovieName",
+			"movieName": movieName,
+			"movieYear": movieYear,
+		})
+		return 0, errors.New("no result found")
+	}
+
+	normalize := func(value string) string {
+		return strings.ToLower(strings.Join(strings.Fields(strings.TrimSpace(value)), ""))
+	}
+	normalizedMovieName := normalize(movieName)
+	for _, movie := range result.MovieResults {
+		if movie.ID == 0 || normalize(movie.MovieName) != normalizedMovieName {
+			continue
+		}
+
+		if movieYear == "" || strings.HasPrefix(movie.MovieYear, movieYear) {
+			return movie.ID, nil
+		}
+	}
+
+	return 0, errors.New("no matching movie found")
 }
 
 func (mc *MovieController) AdminReviewUpdate(c *gin.Context) {

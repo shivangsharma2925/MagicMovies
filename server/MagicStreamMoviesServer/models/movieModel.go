@@ -60,7 +60,7 @@ type TMDBFindByMovieName struct {
 		ID        int    `json:"id"`
 		MovieName string `json:"title"`
 		MovieYear string `json:"release_date"`
-	} `json:"movie_results"`
+	} `json:"results"`
 }
 
 type TMDBMovieDetails struct {
