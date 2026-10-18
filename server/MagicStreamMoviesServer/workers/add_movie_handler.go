@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/models"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/services"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/tasks"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/websocket"
@@ -54,26 +56,32 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 
 	p.jobService.UpdateStatus(
 		imdbID,
-		"processing",
+		string(models.StatusProcessing),
 		"",
 	)
 
 	websocket.BroadcastJobUpdate(gin.H{
 		"type":     "job_update",
 		"imdb_id":  imdbID,
-		"status":   "processing",
+		"status":   string(models.StatusProcessing),
 		"attempts": attempts,
 	})
 
 	// PROCESS MOVIE
 	
-	err := p.movieService.ProcessMovie(imdbID, ctx)
+	err, title := p.movieService.ProcessMovie(imdbID, ctx)
+
+	// UPDATE MOVIE NAME
+	if len(title) != 0 && strings.Contains(imdbID, "tt"){
+		go p.jobService.UpdateTitle(imdbID, title)
+	}
 
 	if err != nil {
 
 		p.movieService.DbLogger.Alerts("ERROR", "Error in processing movie", map[string]any{
 			"endpoint": "/processMovies",
 			"movieID":  imdbID,
+			"movieName": title,
 			"error":    err.Error(),
 		})
 
@@ -82,7 +90,8 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 		websocket.BroadcastJobUpdate(gin.H{
 			"type":    "job_update",
 			"imdb_id": imdbID,
-			"status":  "failed",
+			"title": title,
+			"status":  string(models.StatusFailed),
 		})
 
 		return err
@@ -94,7 +103,8 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	websocket.BroadcastJobUpdate(gin.H{
 		"type":     "job_update",
 		"imdb_id":  imdbID,
-		"status":   "done",
+		"title": title,
+		"status":   string(models.StatusDone),
 		"attempts": attempts,
 	})
 

@@ -974,6 +974,8 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 		return
 	}
 
+	c.JSON(http.StatusOK, gin.H{"message": "Movies added!!"})
+
 	jobCollection := mc.db.Collection("jobs")
 
 	skipped := []string{}
@@ -1011,6 +1013,7 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 			Attempts:  0,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
+			Title:     movieName,
 		}
 
 		_, err = jobCollection.InsertOne(context.Background(), job)
@@ -1034,9 +1037,15 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 		added = append(added, movies.MovieName)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"added":   added,
-		"skipped": skipped,
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"added":   added,
+	// 	"skipped": skipped,
+	// })
+	
+	mc.dbLogger.Log("ADD_MOVIE", "added and skipped movie", gin.H{
+		"added":    added,
+		"skipped":  skipped,
+		"endpoint": "/AddMovieViaAI",
 	})
 
 }

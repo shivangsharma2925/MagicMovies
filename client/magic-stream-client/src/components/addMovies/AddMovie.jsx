@@ -149,19 +149,30 @@ const AddMovie = () => {
 
   useEffect(() => {
     const Socket = socket.current;
+    if (!Socket) return;
 
     const handler = (event) => {
-      const updatedJob = JSON.parse(event.data);
+      let updatedJob;
+      try {
+        updatedJob = JSON.parse(event.data);
+      } catch {
+        return;
+      }
 
       if (updatedJob.type === "job_update") {
-        // Update React Query cache directly
+        let foundJob = false;
         queryClient.setQueryData(["jobs"], (oldJobs = []) => {
-          return oldJobs.map((job) =>
-            job.imdb_id === updatedJob.imdb_id
-              ? { ...job, ...updatedJob }
-              : job,
-          );
+          return oldJobs.map((job) => {
+            if (String(job.imdb_id) !== String(updatedJob.imdb_id)) return job;
+            foundJob = true;
+            return { ...job, ...updatedJob };
+          });
         });
+
+        // AI-added jobs may not exist in the jobs query cache yet.
+        if (!foundJob) {
+          queryClient.invalidateQueries({ queryKey: ["jobs"] });
+        }
       }
     };
 
@@ -236,7 +247,13 @@ const AddMovie = () => {
         />
 
         <div className="d-flex justify-content-space-between gap-2">
-          <AskAiBtn onUseIds={(ids) => setImdbId(ids)} />
+          <AskAiBtn
+            onAdded={() => {
+              queryClient.invalidateQueries({ queryKey: ["jobs"] });
+              setMessage("AI selected movies added to the queue!");
+              setTimeout(() => setMessage(""), 3000);
+            }}
+          />
 
           <button
             className="btn-add-queue"

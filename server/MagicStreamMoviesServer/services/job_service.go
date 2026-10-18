@@ -95,9 +95,23 @@ func (js *JobService) IncrementAttempts(imdbID string) int {
 }
 
 func (js *JobService) MarkDone(imdbID string) {
-	js.UpdateStatus(imdbID, "done", "")
+	js.UpdateStatus(imdbID, string(models.StatusDone), "")
 }
 
 func (js *JobService) MarkFailed(imdbID string, err string) {
-	js.UpdateStatus(imdbID, "failed", err)
+	js.UpdateStatus(imdbID, string(models.StatusFailed), err)
+}
+
+func (js *JobService) UpdateTitle(imdbId string, title string){
+	filter := bson.M{
+		"imdb_id" : imdbId,
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"title" : title,
+		},
+	}
+
+	js.jobCollection.UpdateOne(context.Background(), filter, update)
 }

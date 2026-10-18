@@ -1,4 +1,4 @@
-import { createContext, useEffect, useRef } from "react";
+import { createContext, useLayoutEffect, useRef } from "react";
 
 const WebSocketContext = createContext(null);
 
@@ -6,7 +6,7 @@ export const WebSocketProvider = ({ children }) => {
 
   const socket = useRef(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
 
     socket.current = new WebSocket(
       import.meta.env.VITE_WS_URL ||

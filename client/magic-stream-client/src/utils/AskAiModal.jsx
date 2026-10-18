@@ -3,7 +3,7 @@ import { Modal } from "react-bootstrap";
 import useAxiosPrivate from "../hook/UseAxiosPrivate";
 import "../styling/AI_related.css";
 
-const AskAiBtn = () => {
+const AskAiBtn = ({ onAdded }) => {
   const EXAMPLES = [
     "Give me details for the Fast & Furious series",
     "Movie Info of John Wick Chapter 2",
@@ -30,6 +30,7 @@ const AskAiBtn = () => {
     if (!prompt.trim()) return;
     setLoading(true);
     setResult(null);
+    setShowExamples(true);
 
     try {
       const res = await axiosPrivate.post("/ai/imdb", {
@@ -52,16 +53,17 @@ const AskAiBtn = () => {
   };
 
   const handleUseIds = async () => {
+    setLoading(true);
     try {
       const movieDetails = result.ids.map((movie) => ({
         movie_name: movie.movie_name,
         movie_year: String(movie.year ?? ""),
       }));
 
-      await axiosPrivate.post("/addmovieai", {
+      const response = await axiosPrivate.post("/addmovieai", {
         movie_details: movieDetails,
       });
-
+      onAdded?.(response.data);
       handleClose();
     } catch (error) {
       setResult((prev) => ({
@@ -71,7 +73,6 @@ const AskAiBtn = () => {
       console.log(error);
     } finally {
       setLoading(false);
-      setShowExamples(true);
     }
   };
 
@@ -166,7 +167,7 @@ const AskAiBtn = () => {
               </p>
               <div className="ai-movie-list">
                 {result.ids.map((id) => (
-                  <div key={id.imdbid} className="ai-movie-row">
+                  <div key={id.movie_name} className="ai-movie-row">
                     <div className="ai-movie-info">
                       <span className="ai-movie-name">
                         {id.movie_name || "Unknown"}
@@ -190,16 +191,25 @@ const AskAiBtn = () => {
                   <em> Year, Genre, Cast, etc</em>
                 </div>
               </div>
-              <button className="btn-ai-use" onClick={handleUseIds}>
-                Add these movies →
+              <button
+                className="btn-ai-use"
+                onClick={handleUseIds}
+                disabled={loading}
+              >
+                {loading ? "Adding..." : "Add these movies →"}
               </button>
             </div>
           )}
 
           {result?.error && (
             <div className="ai-error-box">
-              Uh oh — couldn't find valid IMDB IDs for that. Try rephrasing,
+              Uh oh — couldn't find valid movie details. Try rephrasing,
               e.g. <em>"IMDB IDs for the Avengers movies"</em>.
+            </div>
+          )}
+          {result?.addError && (
+            <div className="ai-error-box">
+              Could not add the selected movies. Please try again.
             </div>
           )}
         </Modal.Body>

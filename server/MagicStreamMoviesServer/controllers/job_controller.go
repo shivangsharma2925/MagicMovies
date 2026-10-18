@@ -41,28 +41,14 @@ func (jc *JobController) GetJobs(c *gin.Context) {
 		bson.D{{Key: "$sort", Value: bson.D{
 			{Key: "created_at", Value: -1},
 		}}},
-		// 2. Join jobs with movies collection
-		bson.D{{Key: "$lookup", Value: bson.D{
-			{Key: "from", Value: "movies"},
-			{Key: "localField", Value: "imdb_id"},
-			{Key: "foreignField", Value: "imdb_id"},
-			{Key: "as", Value: "movie_details"},
-		}}},
-		// 3. Flatten the movie_details array (since lookup returns an array)
-		bson.D{{Key: "$unwind", Value: bson.D{
-			{Key: "path", Value: "$movie_details"},
-			{Key: "preserveNullAndEmptyArrays", Value: true}, // Keeps job even if no movie matches
-		}}},
-		// 4. Project only the fields you want
+		// 2. Project the fields returned from the jobs collection
 		bson.D{{Key: "$project", Value: bson.D{
 			{Key: "_id", Value: 1},
-			// Include other job fields you need here, for example:
 			{Key: "imdb_id", Value: 1},
 			{Key: "status", Value: 1},
 			{Key: "attempts", Value: 1},
 			{Key: "error", Value: 1},
-			// Extract just the title from the joined movie document
-			{Key: "title", Value: "$movie_details.title"},
+			{Key: "title", Value: 1},
 		}}},
 		bson.D{
 			{Key: "$limit", Value: 30},

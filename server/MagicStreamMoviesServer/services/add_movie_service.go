@@ -78,29 +78,29 @@ func (ms *MovieService) loadGenres() error {
 	return nil
 }
 
-func (ms *MovieService) ProcessMovie(imdbID string, ctx context.Context) error {
+func (ms *MovieService) ProcessMovie(imdbID string, ctx context.Context) (error, string) {
 
 	// 1. Check duplicate
 	exists, err := ms.MovieExists(imdbID, ctx)
 	if err != nil {
-		return err
+		return err, ""
 	}
 
 	if exists {
-		return nil
+		return nil, ""
 	}
 
 	// 2. Fetch data
 	movieData, err := ms.FetchMovieData(imdbID, ctx)
 	if err != nil {
-		return err
+		return err, ""
 	}
 
 	// 3. Transform
 	movie := utilities.MapToSchema(movieData)
 
 	// 4. Save
-	return ms.SaveMovie(movie, ctx)
+	return ms.SaveMovie(movie, ctx), movieData.Title
 }
 
 func (ms *MovieService) MovieExists(id string, ctx context.Context) (bool, error) {
@@ -320,7 +320,7 @@ func (ms *MovieService) UpdateMovies(c *gin.Context) {
 	}
 
 	for _, id := range moviesid {
-		err := ms.ProcessMovie(id.ImdbId, ctx)
+		err, _ := ms.ProcessMovie(id.ImdbId, ctx)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "imdb_id": id.ImdbId})
 			return
