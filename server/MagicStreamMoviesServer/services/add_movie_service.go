@@ -109,8 +109,9 @@ func (ms *MovieService) MovieExists(id string, ctx context.Context) (bool, error
 
 	filter := bson.M{"imdb_id": id}
 	if !strings.Contains(id, "tt") {
+		id_int, _ := strconv.Atoi(id)
 		filter = bson.M{
-			"tmdb_id": id,
+			"tmdb_id": id_int,
 		}
 	}
 
@@ -169,8 +170,8 @@ func (ms *MovieService) FetchMovieData(imdbID string, ctx context.Context) (*mod
 	}
 
 	return &models.MovieData{
-		ImdbID: details.ImdbID,
-		TmdbID: tmdbID,
+		ImdbID:       details.ImdbID,
+		TmdbID:       tmdbID,
 		Title:        details.Title,
 		Poster:       "https://image.tmdb.org/t/p/w300" + details.PosterPath,
 		Genres:       utilities.MapGenres(details.Genres, ms.genreMap),

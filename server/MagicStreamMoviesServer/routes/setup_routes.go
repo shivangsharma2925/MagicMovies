@@ -66,6 +66,9 @@ func SetupRoutes(
 	api.GET("/movie/:imdb_id", ipLimiter.IPMiddleware(), movieController.GetMovie)
 	api.GET("/category/:title", ipLimiter.IPMiddleware(), movieController.GetByCategory)
 
+	// Used to know all the active connections with Redis
+	// api.GET("/listservers", ipLimiter.IPMiddleware(), movieController.ListServers)
+
 	// Used when some bulk updates on movie collection needs to be done
 	// api.GET("/UpdateMovies", ipLimiter.IPMiddleware(), movieServices.UpdateMovies)
 

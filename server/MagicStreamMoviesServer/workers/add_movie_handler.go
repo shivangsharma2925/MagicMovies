@@ -20,7 +20,7 @@ type MoviesProcessor struct {
 	jobService   *services.JobService
 }
 
-func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) error {
+func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) (taskErr error) {
 	var payload tasks.MoviePayload
 
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
@@ -28,6 +28,7 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	}
 
 	imdbID := payload.ImdbID
+	log.Printf("Movie task started: imdbID=%s", imdbID)
 
 	// So that any panic is treated as normal error and retry
 	defer func() {
@@ -35,7 +36,12 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 
 			panicErr := fmt.Errorf("panic: %v", r)
 
-			p.jobService.MarkFailed(imdbID, panicErr.Error())
+			if err := p.jobService.MarkFailed(imdbID, panicErr.Error()); err != nil {
+				p.movieService.DbLogger.Alerts("ERROR", "Failed to mark panicked job as failed", gin.H{
+					"movieID": imdbID,
+					"error":   err.Error(),
+				})
+			}
 
 			websocket.BroadcastJobUpdate(gin.H{
 				"type":    "job_update",
@@ -48,17 +54,31 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 				"movieID":  imdbID,
 				"error":    panicErr.Error(),
 			})
+			taskErr = panicErr
 		}
 	}()
 
 	// MARK PROCESSING
-	attempts := p.jobService.IncrementAttempts(imdbID)
+	attempts, err := p.jobService.IncrementAttempts(imdbID)
+	if err != nil {
+		p.movieService.DbLogger.Alerts("ERROR", "Failed to increment movie job attempts", gin.H{
+			"movieID": imdbID,
+			"error":   err.Error(),
+		})
+		return err
+	}
 
-	p.jobService.UpdateStatus(
+	if err := p.jobService.UpdateStatus(
 		imdbID,
 		string(models.StatusProcessing),
 		"",
-	)
+	); err != nil {
+		p.movieService.DbLogger.Alerts("ERROR", "Failed to mark job as processing", gin.H{
+			"movieID": imdbID,
+			"error":   err.Error(),
+		})
+		return err
+	}
 
 	websocket.BroadcastJobUpdate(gin.H{
 		"type":     "job_update",
@@ -68,29 +88,34 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	})
 
 	// PROCESS MOVIE
-	
+
 	err, title := p.movieService.ProcessMovie(imdbID, ctx)
 
 	// UPDATE MOVIE NAME
-	if len(title) != 0 && strings.Contains(imdbID, "tt"){
+	if len(title) != 0 && strings.Contains(imdbID, "tt") {
 		go p.jobService.UpdateTitle(imdbID, title)
 	}
 
 	if err != nil {
 
 		p.movieService.DbLogger.Alerts("ERROR", "Error in processing movie", map[string]any{
-			"endpoint": "/processMovies",
-			"movieID":  imdbID,
+			"endpoint":  "/processMovies",
+			"movieID":   imdbID,
 			"movieName": title,
-			"error":    err.Error(),
+			"error":     err.Error(),
 		})
 
-		p.jobService.MarkFailed(imdbID, err.Error())
+		if statusErr := p.jobService.MarkFailed(imdbID, err.Error()); statusErr != nil {
+			p.movieService.DbLogger.Alerts("ERROR", "Failed to mark job as failed", gin.H{
+				"movieID": imdbID,
+				"error":   statusErr.Error(),
+			})
+		}
 
 		websocket.BroadcastJobUpdate(gin.H{
 			"type":    "job_update",
 			"imdb_id": imdbID,
-			"title": title,
+			"title":   title,
 			"status":  string(models.StatusFailed),
 		})
 
@@ -98,12 +123,18 @@ func (p *MoviesProcessor) processMovies(ctx context.Context, t *asynq.Task) erro
 	}
 
 	// SUCCESS
-	p.jobService.MarkDone(imdbID)
+	if err := p.jobService.MarkDone(imdbID); err != nil {
+		p.movieService.DbLogger.Alerts("ERROR", "Failed to mark job as done", gin.H{
+			"movieID": imdbID,
+			"error":   err.Error(),
+		})
+		return err
+	}
 
 	websocket.BroadcastJobUpdate(gin.H{
 		"type":     "job_update",
 		"imdb_id":  imdbID,
-		"title": title,
+		"title":    title,
 		"status":   string(models.StatusDone),
 		"attempts": attempts,
 	})

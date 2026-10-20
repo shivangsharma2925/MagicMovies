@@ -25,7 +25,7 @@ func StartWorkerServer(
 			Concurrency: 3,
 
 			Queues: map[string]int{
-				"movies": 10,
+				tasks.MovieQueueName(): 10,
 			},
 		},
 	)

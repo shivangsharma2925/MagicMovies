@@ -23,6 +23,7 @@ import (
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/queue"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/services"
 	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/utilities"
+	"github.com/shivangsharma2925/MagicMovies/server/MagicStreamMoviesServer/websocket"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -62,6 +63,20 @@ func mustMarshal(v any) []byte {
 	data, _ := json.Marshal(v)
 	return data
 }
+
+// func (mc *MovieController) ListServers(c *gin.Context) {
+// 	insp := asynq.NewInspector(mc.redisOpt)
+// 	defer insp.Close()
+// 	servers, err := insp.Servers()
+// 	if err != nil {
+// 		log.Println(err)
+// 		return
+// 	}
+// 	for _, s := range servers {
+// 		log.Printf("server host=%s pid=%d queues=%v concurrency=%d active=%d started=%v",
+// 			s.Host, s.PID, s.Queues, s.Concurrency, len(s.ActiveWorkers), s.Started)
+// 	}
+// }
 
 func (mc *MovieController) GetMovies(c *gin.Context) {
 
@@ -907,6 +922,12 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 
 		_, err := jobCollection.InsertOne(context.Background(), job)
 		if err != nil {
+			mc.dbLogger.Alerts("ERROR", "Error inserting AI movie job", gin.H{
+				"imdbID":   imdbID,
+				"error":    err.Error(),
+				"endpoint": "/AddMovie",
+			})
+			skipped = append(skipped, imdbID)
 			continue
 		}
 
@@ -914,6 +935,18 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 		err = queue.EnqueueMovie(imdbID)
 
 		if err != nil {
+			_, updateErr := jobCollection.UpdateOne(context.Background(), bson.M{"imdb_id": imdbID}, bson.M{"$set": bson.M{
+				"status":     models.StatusFailed,
+				"error":      err.Error(),
+				"updated_at": time.Now(),
+			}})
+			if updateErr != nil {
+				mc.dbLogger.Alerts("ERROR", "Failed to mark unqueued movie job as failed", gin.H{
+					"imdbID": imdbID,
+					"error":  updateErr.Error(),
+					"endpoint": "/AddMovie",
+				})
+			}
 			mc.dbLogger.Alerts("ERROR", "Error in adding movies to queue", gin.H{
 				"error":    err,
 				"imdbID":   imdbID,
@@ -922,9 +955,15 @@ func (mc *MovieController) AddMovie(c *gin.Context) {
 			skipped = append(skipped, imdbID)
 			continue
 		}
-		// queue.InspectMovieQueue(redisOpt)
+		// queue.InspectMovieQueue(mc.redisOpt)
 		added = append(added, imdbID)
 	}
+
+	mc.dbLogger.Log("ADD_MOVIE", "added and skipped movie", gin.H{
+		"added":    added,
+		"skipped":  skipped,
+		"endpoint": "/AddMovie",
+	})
 
 	c.JSON(http.StatusOK, gin.H{
 		"added":   added,
@@ -974,33 +1013,61 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Movies added!!"})
-
 	jobCollection := mc.db.Collection("jobs")
 
 	skipped := []string{}
 	added := []string{}
 
-	for _, movies := range req.MovieDetails {
+	type resolved struct {
+		name         string
+		year         string
+		originalName string
+		tmdbID       int
+		err          error
+	}
+	results := make([]resolved, len(req.MovieDetails))
+	lookupContext := c.Request.Context()
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, 5)
 
-		movieName := strings.TrimSpace(movies.MovieName)
-		movieYear := strings.TrimSpace(movies.MovieYear)
-		if movieName == "" {
+	for i, movie := range req.MovieDetails {
+		name := strings.TrimSpace(movie.MovieName)
+		year := strings.TrimSpace(movie.MovieYear)
+		results[i].name = name
+		results[i].year = year
+		results[i].originalName = movie.MovieName
+
+		if name == "" || year == "" {
 			continue
 		}
 
-		if movieYear != "" {
-			if _, err := strconv.Atoi(movieYear); err != nil || len(movieYear) != 4 {
-				movieYear = ""
-			}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func(index int, movieName, movieYear string) {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			tmdbID, err := mc.GetTMDBIDByMovieName(movieName, movieYear, lookupContext)
+			results[index].tmdbID = tmdbID
+			results[index].err = err
+		}(i, name, year)
+	}
+	wg.Wait()
+
+	for _, result := range results {
+		movieName := result.name
+		if movieName == "" || result.year == "" {
+			skipped = append(skipped, movieName)
+			continue
 		}
 
-		tmdbID, err := mc.GetTMDBIDByMovieName(movieName, movieYear, c)
-		if err != nil || tmdbID == 0 {
+		tmdbID := result.tmdbID
+		if result.err != nil || tmdbID == 0 {
 			mc.dbLogger.Alerts("ERROR", "Error in fetching movie through movie name and year", gin.H{
-				"error":    err,
-				"tmdbID":   tmdbID,
-				"endpoint": "/AddMovieViaAI",
+				"error":     result.err,
+				"tmdbID":    tmdbID,
+				"movieName": movieName,
+				"endpoint":  "/AddMovieViaAI",
 			})
 			skipped = append(skipped, movieName)
 			continue
@@ -1018,34 +1085,66 @@ func (mc *MovieController) AddMovieViaAI(c *gin.Context) {
 
 		_, err = jobCollection.InsertOne(context.Background(), job)
 		if err != nil {
+			mc.dbLogger.Alerts("ERROR", "Error inserting AI movie job", gin.H{
+				"movieName": movieName,
+				"tmdbID":    tmdbID,
+				"error":     err.Error(),
+				"endpoint":  "/AddMovieViaAI",
+			})
+			skipped = append(skipped, movieName)
 			continue
 		}
+
+		websocket.BroadcastJobUpdate(gin.H{
+			"type":    "job_created",
+			"imdb_id": tmdbIDStr,
+			"title":   movieName,
+			"status":  string(models.StatusPending),
+		})
 
 		// queue.PushToQueue(imdbID)
 		err = queue.EnqueueMovie(tmdbIDStr)
 
 		if err != nil {
+			_, updateErr := jobCollection.UpdateOne(context.Background(), bson.M{"imdb_id": tmdbIDStr}, bson.M{"$set": bson.M{
+				"status":     models.StatusFailed,
+				"error":      err.Error(),
+				"updated_at": time.Now(),
+			}})
+			if updateErr != nil {
+				mc.dbLogger.Alerts("ERROR", "Failed to mark unqueued AI movie job as failed", gin.H{
+					"tmdbID": tmdbID,
+					"error":  updateErr.Error(),
+					"endpoint":  "/AddMovieViaAI",
+				})
+			} else {
+				websocket.BroadcastJobUpdate(gin.H{
+					"type":    "job_update",
+					"imdb_id": tmdbIDStr,
+					"title":   movieName,
+					"status":  string(models.StatusFailed),
+				})
+			}
 			mc.dbLogger.Alerts("ERROR", "Error in adding movies to queue", gin.H{
 				"error":    err,
 				"tmdbID":   tmdbID,
 				"endpoint": "/AddMovieViaAI",
 			})
-			skipped = append(skipped, movies.MovieName)
+			skipped = append(skipped, result.originalName)
 			continue
 		}
 		// queue.InspectMovieQueue(redisOpt)
-		added = append(added, movies.MovieName)
+		added = append(added, result.originalName)
 	}
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"added":   added,
-	// 	"skipped": skipped,
-	// })
-	
 	mc.dbLogger.Log("ADD_MOVIE", "added and skipped movie", gin.H{
 		"added":    added,
 		"skipped":  skipped,
 		"endpoint": "/AddMovieViaAI",
+	})
+	c.JSON(http.StatusOK, gin.H{
+		"added":   added,
+		"skipped": skipped,
 	})
 
 }

@@ -79,6 +79,22 @@
   color: #fff;
 }
 
+.ai-remove-btn{
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0px 6px;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.ai-remove-btn:hover {
+  color: #fff;
+}
+
 .ai-modal-sub {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.4);
@@ -270,6 +286,11 @@
 
 .btn-ai-use:hover {
   background: #ff1b55;
+}
+
+.btn-ai-use:disabled{
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── Error box ── */

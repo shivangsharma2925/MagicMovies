@@ -2,6 +2,7 @@ package tasks
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/hibiken/asynq"
 )
@@ -22,4 +23,11 @@ func NewMovieTask(imdbID string) (*asynq.Task, error) {
 	}
 
 	return asynq.NewTask(TypeMovieAdd, payload), nil
+}
+
+func MovieQueueName() string {
+	if q := os.Getenv("MOVIE_QUEUE"); q != "" {
+		return q
+	}
+	return "movies"
 }

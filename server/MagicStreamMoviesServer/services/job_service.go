@@ -23,7 +23,7 @@ func NewJobService(db *database.MongoDB) *JobService {
 		db:            db,
 		jobCollection: db.Collection("jobs"),
 	}
-	
+
 	JobService.UpdateStaleJobs()
 
 	return JobService
@@ -48,7 +48,9 @@ func (js *JobService) UpdateStaleJobs() {
 	}
 }
 
-func (js *JobService) UpdateStatus(imdbID string, status string, errMsg string) {
+func (js *JobService) UpdateStatus(imdbID string, status string, errMsg string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	filter := bson.M{"imdb_id": imdbID}
 
@@ -60,10 +62,19 @@ func (js *JobService) UpdateStatus(imdbID string, status string, errMsg string) 
 		},
 	}
 
-	js.jobCollection.UpdateOne(context.Background(), filter, update)
+	result, err := js.jobCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("update job %q to %q: %w", imdbID, status, err)
+	}
+	if result.MatchedCount == 0 {
+		return fmt.Errorf("job %q not found while setting status to %q", imdbID, status)
+	}
+	return nil
 }
 
-func (js *JobService) IncrementAttempts(imdbID string) int {
+func (js *JobService) IncrementAttempts(imdbID string) (int, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	filter := bson.M{
 		"imdb_id": imdbID,
@@ -81,35 +92,35 @@ func (js *JobService) IncrementAttempts(imdbID string) int {
 	var updatedJob models.Job
 
 	err := js.jobCollection.FindOneAndUpdate(
-		context.Background(),
+		ctx,
 		filter,
 		update,
 		options,
 	).Decode(&updatedJob)
 
 	if err != nil {
-		fmt.Printf("error in incrementing the attempts: %s", err)
+		return 0, fmt.Errorf("increment attempts for job %q: %w", imdbID, err)
 	}
 
-	return updatedJob.Attempts
+	return updatedJob.Attempts, nil
 }
 
-func (js *JobService) MarkDone(imdbID string) {
-	js.UpdateStatus(imdbID, string(models.StatusDone), "")
+func (js *JobService) MarkDone(imdbID string) error {
+	return js.UpdateStatus(imdbID, string(models.StatusDone), "")
 }
 
-func (js *JobService) MarkFailed(imdbID string, err string) {
-	js.UpdateStatus(imdbID, string(models.StatusFailed), err)
+func (js *JobService) MarkFailed(imdbID string, err string) error {
+	return js.UpdateStatus(imdbID, string(models.StatusFailed), err)
 }
 
-func (js *JobService) UpdateTitle(imdbId string, title string){
+func (js *JobService) UpdateTitle(imdbId string, title string) {
 	filter := bson.M{
-		"imdb_id" : imdbId,
+		"imdb_id": imdbId,
 	}
 
 	update := bson.M{
 		"$set": bson.M{
-			"title" : title,
+			"title": title,
 		},
 	}
 

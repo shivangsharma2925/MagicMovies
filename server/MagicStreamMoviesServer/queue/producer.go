@@ -22,7 +22,7 @@ func EnqueueMovie(imdbID string) error {
 		asynq.MaxRetry(5),
 
 		// queue name
-		asynq.Queue("movies"),
+		asynq.Queue(tasks.MovieQueueName()),
 	)
 
 	if err != nil {

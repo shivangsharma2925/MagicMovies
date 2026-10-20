@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import UseAuth from "../../hook/UseAuth";
 import useAxiosPrivate from "../../hook/UseAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -7,6 +7,35 @@ import AskAiBtn from "../../utils/AskAiModal";
 import PageTitle from "../../utils/PageTitle";
 import "../../styling/AddMovie.css";
 const JOBS_PER_PAGE = 8;
+const MAX_CACHED_JOBS = 30;
+
+const mergeJobMessage = (jobs, message) => {
+  const { type, ...incoming } = message;
+  const jobId = String(incoming.imdb_id);
+  const index = jobs.findIndex((job) => String(job.imdb_id) === jobId);
+
+  if (index === -1) {
+    const newJob = {
+      imdb_id: incoming.imdb_id,
+      title: incoming.title ?? incoming.imdb_id,
+      status: incoming.status ?? "pending",
+      attempts: incoming.attempts ?? 0,
+      error: incoming.error ?? "",
+      ...incoming,
+    };
+    return [newJob, ...jobs].slice(0, MAX_CACHED_JOBS);
+  }
+
+  const next = [...jobs];
+  next[index] =
+    type === "job_created"
+      ? { ...incoming, ...jobs[index] }
+      : { ...jobs[index], ...incoming };
+  return next;
+};
+
+const mergeBufferedJobMessages = (jobs, messages) =>
+  messages.reduce(mergeJobMessage, jobs);
 
 const JobRow = React.memo(({ job, retryMutation }) => {
   const badgeClass =
@@ -58,6 +87,7 @@ const AddMovie = () => {
   const axiosPrivate = useAxiosPrivate();
 
   const queryClient = useQueryClient();
+  const pendingJobMessages = useRef(new Map());
 
   const { auth } = UseAuth(); //here provider has {{ auth }}
 
@@ -76,9 +106,11 @@ const AddMovie = () => {
   } = useQuery({
     queryKey: ["jobs"],
 
-    queryFn: async () => {
-      const res = await axiosPrivate.get("/jobs");
-      return res.data;
+    queryFn: async ({ signal }) => {
+      const res = await axiosPrivate.get("/jobs", { signal });
+      const bufferedMessages = [...pendingJobMessages.current.values()];
+      pendingJobMessages.current.clear();
+      return mergeBufferedJobMessages(res.data, bufferedMessages);
     },
 
     staleTime: 1000 * 60,
@@ -151,29 +183,47 @@ const AddMovie = () => {
     const Socket = socket.current;
     if (!Socket) return;
 
+    let updateQueue = Promise.resolve();
+
     const handler = (event) => {
-      let updatedJob;
+      let message;
       try {
-        updatedJob = JSON.parse(event.data);
+        message = JSON.parse(event.data);
       } catch {
         return;
       }
 
-      if (updatedJob.type === "job_update") {
-        let foundJob = false;
-        queryClient.setQueryData(["jobs"], (oldJobs = []) => {
-          return oldJobs.map((job) => {
-            if (String(job.imdb_id) !== String(updatedJob.imdb_id)) return job;
-            foundJob = true;
-            return { ...job, ...updatedJob };
-          });
-        });
-
-        // AI-added jobs may not exist in the jobs query cache yet.
-        if (!foundJob) {
-          queryClient.invalidateQueries({ queryKey: ["jobs"] });
-        }
+      if ((message.type !== "job_update" && message.type !== "job_created") || message.imdb_id == null) {
+        return;
       }
+
+      const cachedJobs = queryClient.getQueryData(["jobs"]);
+      const queryState = queryClient.getQueryState(["jobs"]);
+
+      // Preserve websocket events that arrive before the first jobs request
+      // finishes; the query function merges them into that response.
+      if (cachedJobs === undefined && queryState?.fetchStatus === "fetching") {
+        const jobId = String(message.imdb_id);
+        const previous = pendingJobMessages.current.get(jobId);
+        if (!previous) {
+          pendingJobMessages.current.set(jobId, message);
+        } else if ( message.type === "job_created" && previous.type === "job_update" ) {
+            // A creation notification must not replace a newer status update.
+            return;
+        } else {
+            pendingJobMessages.current.set(jobId, { ...previous, ...message });
+        }
+        return;
+      }
+
+      // Process events in arrival order so a slower cancellation cannot apply
+      // an older message after a newer one.
+      updateQueue = updateQueue.then(async () => {
+        await queryClient.cancelQueries({ queryKey: ["jobs"] });
+        queryClient.setQueryData(["jobs"], (oldJobs = []) =>
+          mergeJobMessage(Array.isArray(oldJobs) ? oldJobs : [], message),
+        );
+      });
     };
 
     Socket.addEventListener("message", handler);
@@ -287,7 +337,7 @@ const AddMovie = () => {
                 <tbody>
                   {paginatedJobs.map((job) => (
                     <JobRow
-                      key={job._id}
+                      key={job.imdb_id}
                       job={job}
                       retryMutation={retryMutation}
                     />

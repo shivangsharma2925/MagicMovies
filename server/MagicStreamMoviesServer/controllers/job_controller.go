@@ -68,7 +68,7 @@ func (jc *JobController) GetJobs(c *gin.Context) {
 	defer cursor.Close(context.Background())
 
 	// Decode results into a dynamic slice or updated struct
-	var jobs []models.Job
+	jobs := make([]models.Job, 0)
 	if err := cursor.All(context.Background(), &jobs); err != nil {
 		jc.dbLogger.Alerts("Error", "Error in decoding jobs", gin.H{
 			"enpoint": "/GetJobs",
@@ -201,7 +201,8 @@ func (jc *JobController) AskAiImdb(c *gin.Context) {
 			if strings.Contains(errText, "quota") ||
 				strings.Contains(errText, "resource_exhausted") ||
 				strings.Contains(errText, "429") ||
-				strings.Contains(errText, "deadline") {
+				strings.Contains(errText, "deadline") ||
+				strings.Contains(errText, "503") {
 				jc.dbLogger.Alerts("WARN", "Model failed or timed out, trying next", gin.H{
 					"endpoint": "/AskAiImdb",
 					"error":    err.Error(),

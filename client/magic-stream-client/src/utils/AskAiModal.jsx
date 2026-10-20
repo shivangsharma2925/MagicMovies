@@ -52,27 +52,43 @@ const AskAiBtn = ({ onAdded }) => {
     }
   };
 
-  const handleUseIds = async () => {
-    setLoading(true);
-    try {
-      const movieDetails = result.ids.map((movie) => ({
-        movie_name: movie.movie_name,
-        movie_year: String(movie.year ?? ""),
-      }));
+  // const handleUseIds = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const movieDetails = result.ids.map((movie) => ({
+  //       movie_name: movie.movie_name,
+  //       movie_year: String(movie.year ?? ""),
+  //     }));
 
+  //     const response = await axiosPrivate.post("/addmovieai", {
+  //       movie_details: movieDetails,
+  //     });
+  //     onAdded?.(response.data);
+  //     handleClose();
+  //   } catch (error) {
+  //     setResult((prev) => ({
+  //       ...prev,
+  //       addError: true,
+  //     }));
+  //     console.log(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const handleUseIds = async () => {
+    const movieDetails = result.ids.map((m) => ({
+      movie_name: m.movie_name,
+      movie_year: String(m.year ?? ""),
+    }));
+    handleClose(); // close immediately
+    try {
       const response = await axiosPrivate.post("/addmovieai", {
         movie_details: movieDetails,
       });
       onAdded?.(response.data);
-      handleClose();
     } catch (error) {
-      setResult((prev) => ({
-        ...prev,
-        addError: true,
-      }));
       console.log(error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -174,16 +190,33 @@ const AskAiBtn = ({ onAdded }) => {
                       </span>
                       <span className="ai-movie-year">{id.year}</span>
                     </div>
-                    <span className="ai-id-pill">
-                      <a
-                        href={`https://www.google.com/search?q=site%3Aimdb.com%2Ftitle%2F+${id.movie_name}+${id.year}&btnI=1`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ai-verify-link"
+                    <div className="d-flex">
+                      <span className="ai-id-pill">
+                        <a
+                          href={`https://www.google.com/search?q=site%3Aimdb.com%2Ftitle%2F+${id.movie_name}+${id.year}&btnI=1`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ai-verify-link"
+                        >
+                          Verify?
+                        </a>
+                      </span>
+                      <button
+                        type="button"
+                        className="ai-remove-btn"
+                        onClick={() =>
+                          setResult((prev) => ({
+                            ...prev,
+                            ids: result.ids.filter(
+                              (_id) => _id.movie_name !== id.movie_name,
+                            ),
+                          }))
+                        }
+                        aria-label={`Remove ${id.movie_name}`}
                       >
-                        Verify?
-                      </a>
-                    </span>
+                        ×
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <div className="ai-context-box">
@@ -194,7 +227,7 @@ const AskAiBtn = ({ onAdded }) => {
               <button
                 className="btn-ai-use"
                 onClick={handleUseIds}
-                disabled={loading}
+                disabled={loading || !result?.ids?.length}
               >
                 {loading ? "Adding..." : "Add these movies →"}
               </button>
@@ -203,8 +236,8 @@ const AskAiBtn = ({ onAdded }) => {
 
           {result?.error && (
             <div className="ai-error-box">
-              Uh oh — couldn't find valid movie details. Try rephrasing,
-              e.g. <em>"IMDB IDs for the Avengers movies"</em>.
+              Uh oh — couldn't find valid movie details. Try rephrasing, e.g.{" "}
+              <em>"IMDB IDs for the Avengers movies"</em>.
             </div>
           )}
           {result?.addError && (
